@@ -9,7 +9,7 @@ import org.scalajs.jquery.jQuery
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
 
 import scalacss.DevDefaults._
@@ -94,15 +94,15 @@ object Client extends TaskClient[SamplePrompt, SampleResponse, SampleAjaxRequest
     }
   }
 
-  val FullUI = ReactComponentB[Unit]("Full UI")
+  val FullUI = ScalaComponent.builder[Unit]("Full UI")
     .initialState(Loading: State)
     .renderBackend[FullUIBackend]
     .componentDidMount(context => context.backend.load)
-    .componentDidUpdate(context => context.$.backend.updateResponse)
+    .componentDidUpdate(context => context.backend.updateResponse)
     .build
 
   def main(): Unit = jQuery { () =>
-    ReactDOM.render(FullUI(), dom.document.getElementById(FieldLabels.rootClientDivLabel))
+    FullUI().renderIntoDOM(dom.document.getElementById(FieldLabels.rootClientDivLabel))
   }
 
   private[this] val instructions = <.div(
