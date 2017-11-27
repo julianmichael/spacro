@@ -14,8 +14,10 @@ import java.io.PrintWriter
 
 import com.amazonaws.services.mturk.AmazonMTurk
 import com.amazonaws.services.mturk.model.{HIT => MTurkHIT}
+import com.amazonaws.services.mturk.model.QualificationType
 import com.amazonaws.services.mturk.model.ListHITsRequest
 import com.amazonaws.services.mturk.model.ListWorkersWithQualificationTypeRequest
+import com.amazonaws.services.mturk.model.ListQualificationTypesRequest
 
 /** Utility classes, methods, and extension methods for spacro. */
 package object util {
@@ -88,6 +90,24 @@ package object util {
         new ListWorkersWithQualificationTypeRequest()
           .withQualificationTypeId(qualTypeId)
           .withMaxResults(100))
+    }
+
+    def listAllQualificationTypes(request: ListQualificationTypesRequest) = {
+      @tailrec def listAllQualificationTypesAux(qualTypesSoFar: Vector[QualificationType], req: ListQualificationTypesRequest): Vector[QualificationType] = {
+        val nextPage = client.listQualificationTypes(request)
+        val (nextQualTypes, nextToken) = (nextPage.getQualificationTypes, nextPage.getNextToken)
+        if(nextQualTypes == null) {
+          qualTypesSoFar
+        } else {
+          val aggQualTypes = qualTypesSoFar ++ nextQualTypes.asScala.toVector
+          if(nextToken == null) {
+            aggQualTypes
+          } else {
+            listAllQualificationTypesAux(aggQualTypes, req.withNextToken(nextToken))
+          }
+        }
+      }
+      listAllQualificationTypesAux(Vector.empty[QualificationType], request)
     }
   }
 
