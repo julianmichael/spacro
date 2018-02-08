@@ -24,8 +24,9 @@ object NumAssignmentsHITManager {
     helper: HITManager.Helper[Prompt, Response],
     numAssignmentsPerPrompt: Int,
     initNumHITsToKeepActive: Int,
-    _promptSource: Iterator[Prompt]) = new NumAssignmentsHITManager[Prompt, Response](
-    helper, _ => numAssignmentsPerPrompt, initNumHITsToKeepActive, _promptSource)
+    _promptSource: Iterator[Prompt],
+    shouldReviewPartiallyCompletedHITs: Boolean = true) = new NumAssignmentsHITManager[Prompt, Response](
+    helper, _ => numAssignmentsPerPrompt, initNumHITsToKeepActive, _promptSource, shouldReviewPartiallyCompletedHITs)
 }
 
 /** Simplest HIT manager, which gets a fixed number of assignments for every prompt
@@ -37,7 +38,9 @@ class NumAssignmentsHITManager[Prompt, Response](
   helper: HITManager.Helper[Prompt, Response],
   numAssignmentsForPrompt: Prompt => Int,
   initNumHITsToKeepActive: Int,
-  _promptSource: Iterator[Prompt]) extends HITManager[Prompt, Response](helper) with StrictLogging {
+  _promptSource: Iterator[Prompt],
+  shouldReviewPartiallyCompletedHITs: Boolean = true
+) extends HITManager[Prompt, Response](helper) with StrictLogging {
 
   var numHITsToKeepActive: Int = initNumHITsToKeepActive
 
@@ -139,11 +142,13 @@ class NumAssignmentsHITManager[Prompt, Response](
     val reviewableHITSet = reviewableHITs.toSet
 
     // for HITs asking for more than one assignment, we want to check those manually
-    for {
-      (prompt, hitInfos) <- helper.activeHITInfosByPromptIterator.toList
-      HITInfo(hit, _) <- hitInfos
-      if numAssignmentsForPrompt(hit.prompt) > 1 && !reviewableHITSet.contains(hit)
-    } yield reviewAssignmentsForHIT(hit)
+    if(shouldReviewPartiallyCompletedHITs) {
+      for {
+        (prompt, hitInfos) <- helper.activeHITInfosByPromptIterator.toList
+        HITInfo(hit, _) <- hitInfos
+        if numAssignmentsForPrompt(hit.prompt) > 1 && !reviewableHITSet.contains(hit)
+      } yield reviewAssignmentsForHIT(hit)
+    }
 
     refreshHITs
   }
