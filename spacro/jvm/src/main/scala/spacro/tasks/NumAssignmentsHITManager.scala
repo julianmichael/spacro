@@ -88,8 +88,13 @@ class NumAssignmentsHITManager[Prompt, Response](
             // if this prompt is already active, queue it for later
             // TODO probably want to delay it by a constant factor instead
             queuedPrompts.enqueue(nextPrompt)
-          } else helper.createHIT(nextPrompt, numAssignmentsForPrompt(nextPrompt)) recover {
-            case _ => queuedPrompts.enqueue(nextPrompt) // put it back at the bottom to try later
+          } else {
+            val numFinishedAssignments = helper.finishedHITInfos(nextPrompt).map(_.assignments.size).sum
+            // following will be > 0 because isFinished was false
+            val numRemainingAssignments = numAssignmentsForPrompt(nextPrompt) - numFinishedAssignments
+            helper.createHIT(nextPrompt, numRemainingAssignments) recover {
+              case _ => queuedPrompts.enqueue(nextPrompt) // put it back at the bottom to try later
+            }
           }
       }
     }

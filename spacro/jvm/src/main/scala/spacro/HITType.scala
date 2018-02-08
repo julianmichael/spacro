@@ -43,7 +43,7 @@ case class HITType(
   description: String,
   keywords: String,
   reward: Double,
-  autoApprovalDelay: Long = 3600L, // seconds (1 hour)
-  assignmentDuration: Long = 600L, // seconds (10 minutes)
+  autoApprovalDelay: Long,
+  assignmentDuration: Long,
   qualRequirements: Array[QualificationRequirement] = Array.empty[QualificationRequirement]
 )

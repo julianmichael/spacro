@@ -22,7 +22,9 @@ class SampleExperiment(implicit config: TaskConfig) {
       Given a sentence, indicate whether it is good.
     """.trim,
     reward = 0.10,
-    keywords = "language,english,question answering")
+    keywords = "language,english,question answering",
+    autoApprovalDelay = 2592000L,
+    assignmentDuration = 600L)
 
   // Then, you need some source of prompts which you will get responses to over turk.
   // in the sample task, these prompts are just strings.
