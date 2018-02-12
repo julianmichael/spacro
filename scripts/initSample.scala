@@ -5,9 +5,15 @@ import spacro.sample._
 import com.amazonaws.services.mturk.model._
 import com.amazonaws.services.mturk._
 val hitDataService = new InMemoryHITDataService
+val interface = "0.0.0.0"
+val httpsPort = 8080
+val httpPort = 8888
 implicit val config = SandboxTaskConfig(
   "spacro-sample",
   "localhost",
+  interface,
+  httpsPort,
+  httpPort,
   hitDataService)
 val exp = new SampleExperiment
 
@@ -50,7 +56,13 @@ def getActiveHITIds = {
 }
 
 def exit = {
+  // actor system has to be terminated for JVM to be able to terminate properly upon :q
   config.actorSystem.terminate
+  // flush & release logging resources
+  import org.slf4j.LoggerFactory
+  import ch.qos.logback.classic.LoggerContext
+  LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext].stop
+  System.out.println("Terminated actor system and logging. Type :q to end.")
 }
 
 exp.server

@@ -1,6 +1,6 @@
 package spacro.tasks
 
-import spacro._
+import spacro.HITDataService
 
 import akka.actor.ActorSystem
 
@@ -71,6 +71,9 @@ object TaskConfig {
 case class ProductionTaskConfig(
   override val projectName: String,
   override val serverDomain: String,
+  override val interface: String,
+  override val httpPort: Int,
+  override val httpsPort: Int,
   override val hitDataService: HITDataService
 ) extends TaskConfig {
 
@@ -86,16 +89,15 @@ case class ProductionTaskConfig(
   override val isProduction = true
 
   override val actorSystem = ActorSystem("production")
-  private[this] val akkaConfig = actorSystem.settings.config
-  override val interface = akkaConfig.getString("app.interface")
-  override val httpPort = akkaConfig.getInt("app.httpPort")
-  override val httpsPort = akkaConfig.getInt("app.httpsPort")
 }
 
 /** Complete configuration for running on the sandbox. */
 case class SandboxTaskConfig(
   override val projectName: String,
   override val serverDomain: String,
+  override val interface: String,
+  override val httpPort: Int,
+  override val httpsPort: Int,
   override val hitDataService: HITDataService
 ) extends TaskConfig {
 
@@ -110,8 +112,4 @@ case class SandboxTaskConfig(
   override val isProduction = false
 
   override val actorSystem = ActorSystem("sandbox")
-  private[this] val akkaConfig = actorSystem.settings.config
-  override val interface = akkaConfig.getString("app.interface")
-  override val httpPort = akkaConfig.getInt("app.httpPort")
-  override val httpsPort = akkaConfig.getInt("app.httpsPort")
 }
