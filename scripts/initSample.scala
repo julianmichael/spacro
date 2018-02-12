@@ -12,8 +12,8 @@ implicit val config = SandboxTaskConfig(
   "spacro-sample",
   "localhost",
   interface,
-  httpsPort,
   httpPort,
+  httpsPort,
   hitDataService)
 val exp = new SampleExperiment
 
