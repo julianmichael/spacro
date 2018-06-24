@@ -1,7 +1,6 @@
 package spacro.tasks
 
 import scalajs.js
-import scalajs.js.JSApp
 import org.scalajs.jquery.jQuery
 
 import upickle.default._
@@ -21,7 +20,7 @@ trait TaskDispatcher {
     read[String](jQuery(s"#${FieldLabels.taskKeyLabel}").attr("value").get)
   }
 
-  final def main(): Unit = jQuery { () =>
+  final def main(args: Array[String]): Unit = jQuery { () =>
     // this needs to be done in order for the form submit to work
     global.turkSetAssignmentID()
     // dispatch to specific task

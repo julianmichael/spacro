@@ -28,15 +28,32 @@ object TaskPage {
           `type` := "text/javascript",
           src := "https://s3.amazonaws.com/mturk-public/externalHIT_v1.js"
         ),
+        // script(
+        //   `type` := "text/javascript",
+        //   src := "https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react.js"
+        // ),
+        // script(
+        //   `type` := "text/javascript",
+        //   src := "https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react-dom.js"
+        // ),
+        // script(
+        //   `type` := "text/javascript",
+        //   src := s"https://code.jquery.com/jquery-2.1.4.min.js"),
         script(
           `type` := "text/javascript",
-          src := s"$protocol//$serverDomain:$port/$projectName-jsdeps.js"),
+          src := s"$protocol//$serverDomain:$port/jsdeps.js"),
         script(
           `type` := "text/javascript",
-          src := s"$protocol//$serverDomain:$port/$projectName-fastopt.js"),
-        script(
-          `type` := "text/javascript",
-          src := s"$protocol//$serverDomain:$port/$projectName-launcher.js"),
+          src := s"$protocol//$serverDomain:$port/out.js"),
+        // script(
+        //   `type` := "text/javascript",
+        //   src := s"$protocol//$serverDomain:$port/$projectName-jsdeps.js"),
+        // script(
+        //   `type` := "text/javascript",
+        //   src := s"$protocol//$serverDomain:$port/$projectName-fastopt.js"),
+        // script(
+        //   `type` := "text/javascript",
+        //   src := s"$protocol//$serverDomain:$port/$projectName-launcher.js"),
         headTags
       ),
       body()(
