@@ -9,7 +9,7 @@ import com.amazonaws.services.mturk.model.DeleteHITRequest
 import com.amazonaws.services.mturk.model.ApproveAssignmentRequest
 import com.amazonaws.services.mturk.model.RejectAssignmentRequest
 
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -35,9 +35,9 @@ abstract class HITManager[Prompt, Response](
 
   // delegates to helper when given a standard message defined in the helper
   private[this] final val receiveHelperMessage: PartialFunction[Any, Unit] = {
-    case ExpireAll => helper.expireAll
-    case DeleteAll => helper.deleteAll
-    case ReviewHITs => reviewHITs
+    case ExpireAll    => helper.expireAll
+    case DeleteAll    => helper.deleteAll
+    case ReviewHITs   => reviewHITs
     case AddPrompt(p) => addPrompt(p)
   }
 
@@ -54,11 +54,11 @@ abstract class HITManager[Prompt, Response](
 }
 
 object HITManager {
+
   /** Manages the ongoing state for a task with a particular HIT type;
     * keeps track of HITs and assignments that are active, saved, etc.
     * and gives convenience methods for interfacing with Turk. */
-  class Helper[P, R](
-    val taskSpec: TaskSpecification { type Prompt = P ; type Response = R })(
+  class Helper[P, R](val taskSpec: TaskSpecification { type Prompt = P; type Response = R })(
     implicit val promptReader: Reader[P],
     val responseReader: Reader[R],
     val responseWriter: Writer[R],
@@ -99,35 +99,45 @@ object HITManager {
       for {
         mTurkHIT <- config.service.listAllHITs
         if mTurkHIT.getHITTypeId.equals(hitTypeId)
-        hit <- config.hitDataService.getHIT[Prompt](hitTypeId, mTurkHIT.getHITId).toOptionLogging(logger)
+        hit <- config.hitDataService
+          .getHIT[Prompt](hitTypeId, mTurkHIT.getHITId)
+          .toOptionLogging(logger)
       } yield (active += hit)
 
       val finishedRes = mutable.Map.empty[Prompt, List[HITInfo[Prompt, Response]]]
       val activeRes = mutable.Map.empty[Prompt, List[HITInfo[Prompt, Response]]]
-      config.hitDataService.getAllHITInfo[Prompt, Response](hitTypeId).get
+      config.hitDataService
+        .getAllHITInfo[Prompt, Response](hitTypeId)
+        .get
         .groupBy(_.hit.prompt)
-        .foreach { case (prompt, infos) =>
-          infos.foreach { hitInfo =>
-            if(active.contains(hitInfo.hit)) {
-              activeRes.put(prompt, hitInfo :: activeRes.get(prompt).getOrElse(Nil))
-            } else {
-              finishedRes.put(prompt, hitInfo :: activeRes.get(prompt).getOrElse(Nil))
+        .foreach {
+          case (prompt, infos) =>
+            infos.foreach { hitInfo =>
+              if (active.contains(hitInfo.hit)) {
+                activeRes.put(prompt, hitInfo :: activeRes.get(prompt).getOrElse(Nil))
+              } else {
+                finishedRes.put(prompt, hitInfo :: activeRes.get(prompt).getOrElse(Nil))
+              }
             }
-          }
-      }
+        }
       (active, finishedRes, activeRes)
     }
 
     def finishedHITInfosByPromptIterator: Iterator[(Prompt, List[HITInfo[Prompt, Response]])] =
       finishedHITInfosByPrompt.iterator
+
     def finishedHITInfos(p: Prompt): List[HITInfo[Prompt, Response]] =
       finishedHITInfosByPrompt.get(p).getOrElse(Nil)
+
     def activeHITInfosByPromptIterator: Iterator[(Prompt, List[HITInfo[Prompt, Response]])] =
       activeHITInfosByPrompt.iterator
+
     def activeHITInfos(p: Prompt): List[HITInfo[Prompt, Response]] =
       activeHITInfosByPrompt.get(p).getOrElse(Nil)
+
     def allCurrentHITInfosByPromptIterator: Iterator[(Prompt, List[HITInfo[Prompt, Response]])] =
       activeHITInfosByPromptIterator ++ finishedHITInfosByPromptIterator
+
     def allCurrentHITInfos(p: Prompt): List[HITInfo[Prompt, Response]] =
       activeHITInfos(p) ++ finishedHITInfos(p)
 
@@ -141,7 +151,9 @@ object HITManager {
           activeHITs += hit
           val newHITInfo = HITInfo[Prompt, Response](hit, Nil)
           activeHITInfosByPrompt.put(prompt, newHITInfo :: activeHITInfos(prompt))
-          logger.info(s"Created HIT: ${hit.hitId}\n${config.workerUrl}/mturk/preview?groupId=${hit.hitTypeId}")
+          logger.info(
+            s"Created HIT: ${hit.hitId}\n${config.workerUrl}/mturk/preview?groupId=${hit.hitTypeId}"
+          )
         case Failure(e) =>
           logger.error(e.getMessage)
           e.printStackTrace
@@ -177,7 +189,7 @@ object HITManager {
       Try(config.service.deleteHIT((new DeleteHITRequest).withHITId(hit.hitId))) match {
         case Success(_) =>
           logger.info(s"Deleted HIT: ${hit.hitId}\nHIT type for deleted HIT: ${hitTypeId}")
-          if(!isActive(hit)) {
+          if (!isActive(hit)) {
             logger.error(s"Deleted HIT that isn't registered as active: $hit")
           } else {
             activeHITs -= hit
@@ -187,14 +199,15 @@ object HITManager {
             val curInfo = activeData
               .find(_.hit.hitId == hit.hitId)
               .getOrElse {
-              logger.error("Could not find active HIT to move to finished");
-              HITInfo(
-                hit,
-                config.hitDataService.getAssignmentsForHIT[Response](hitTypeId, hit.hitId).get)
-            }
+                logger.error("Could not find active HIT to move to finished");
+                HITInfo(
+                  hit,
+                  config.hitDataService.getAssignmentsForHIT[Response](hitTypeId, hit.hitId).get
+                )
+              }
             val newActiveData = activeData.filterNot(_.hit.hitId == hit.hitId)
             val newFinishedData = curInfo :: finishedData
-            if(newActiveData.isEmpty) {
+            if (newActiveData.isEmpty) {
               activeHITInfosByPrompt.remove(hit.prompt)
             } else {
               activeHITInfosByPrompt.put(hit.prompt, newActiveData)
@@ -215,10 +228,13 @@ object HITManager {
 
     def getInReview(assignment: Assignment[Response]): Option[AssignmentInReview] =
       assignmentsInReview.find(_.assignment == assignment)
+
     def getInReview(assignmentId: String): Option[AssignmentInReview] =
       assignmentsInReview.find(_.assignment.assignmentId == assignmentId)
+
     def isInReview(assignment: Assignment[Response]): Boolean =
       getInReview(assignment).nonEmpty
+
     def isInReview(assignmentId: String): Boolean =
       getInReview(assignmentId).nonEmpty
     def numAssignmentsInReview = assignmentsInReview.size
@@ -238,43 +254,53 @@ object HITManager {
     ): Unit = {
       import aInRev.assignment
       evaluation match {
-        case Approval(message) => Try {
-          config.service.approveAssignment(
-            (new ApproveAssignmentRequest)
-              .withAssignmentId(assignment.assignmentId)
-              .withRequesterFeedback(message))
-          assignmentsInReview -= aInRev
-          val curData = activeHITInfos(hit.prompt)
-          val curInfo = curData.find(_.hit.hitId == hit.hitId)
-            .getOrElse {
-            logger.error(s"Could not find active data for hit $hit")
-            activeHITs += hit
-            HITInfo[Prompt, Response](hit, Nil)
+        case Approval(message) =>
+          Try {
+            config.service.approveAssignment(
+              (new ApproveAssignmentRequest)
+                .withAssignmentId(assignment.assignmentId)
+                .withRequesterFeedback(message)
+            )
+            assignmentsInReview -= aInRev
+            val curData = activeHITInfos(hit.prompt)
+            val curInfo = curData
+              .find(_.hit.hitId == hit.hitId)
+              .getOrElse {
+                logger.error(s"Could not find active data for hit $hit")
+                activeHITs += hit
+                HITInfo[Prompt, Response](hit, Nil)
+              }
+            val filteredData = curData.filterNot(_.hit.hitId == hit.hitId)
+            val newInfo = curInfo.copy(assignments = assignment :: curInfo.assignments)
+            activeHITInfosByPrompt.put(hit.prompt, newInfo :: filteredData)
+            logger.info(
+              s"Approved assignment for worker ${assignment.workerId}: ${assignment.assignmentId}\n" +
+              s"HIT for approved assignment: ${assignment.hitId}; $hitTypeId"
+            )
+            config.hitDataService.saveApprovedAssignment(assignment).recover {
+              case e =>
+                logger.error(s"Failed to save approved assignment; data:\n${write(assignment)}")
+            }
           }
-          val filteredData = curData.filterNot(_.hit.hitId == hit.hitId)
-          val newInfo = curInfo.copy(assignments = assignment :: curInfo.assignments)
-          activeHITInfosByPrompt.put(hit.prompt, newInfo :: filteredData)
-          logger.info(s"Approved assignment for worker ${assignment.workerId}: ${assignment.assignmentId}\n" +
-                        s"HIT for approved assignment: ${assignment.hitId}; $hitTypeId")
-          config.hitDataService.saveApprovedAssignment(assignment).recover { case e =>
-            logger.error(s"Failed to save approved assignment; data:\n${write(assignment)}")
+        case Rejection(message) =>
+          Try {
+            config.service.rejectAssignment(
+              (new RejectAssignmentRequest)
+                .withAssignmentId(assignment.assignmentId)
+                .withRequesterFeedback(message)
+            )
+            assignmentsInReview -= aInRev
+            logger.info(
+              s"Rejected assignment: ${assignment.assignmentId}\n" +
+              s"HIT for rejected assignment: ${assignment.hitId}; ${hitTypeId}\n" +
+              s"Reason: $message"
+            )
+            config.hitDataService.saveRejectedAssignment(assignment) recover {
+              case e =>
+                logger.error(s"Failed to save approved assignment; data:\n${write(assignment)}")
+            }
           }
-        }
-        case Rejection(message) => Try {
-          config.service.rejectAssignment(
-            (new RejectAssignmentRequest)
-              .withAssignmentId(assignment.assignmentId)
-              .withRequesterFeedback(message))
-          assignmentsInReview -= aInRev
-          logger.info(s"Rejected assignment: ${assignment.assignmentId}\n" +
-                        s"HIT for rejected assignment: ${assignment.hitId}; ${hitTypeId}\n" +
-                        s"Reason: $message")
-          config.hitDataService.saveRejectedAssignment(assignment) recover { case e =>
-            logger.error(s"Failed to save approved assignment; data:\n${write(assignment)}")
-          }
-        }
       }
     }
   }
 }
-

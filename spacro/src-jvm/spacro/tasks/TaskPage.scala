@@ -6,16 +6,17 @@ import upickle.default._
 
 /** Contains the general HTML template for all tasks. */
 object TaskPage {
+
   /** Constructs the HTML page for a given prompt and a given task. */
-  def htmlPage[Prompt : Writer](
+  def htmlPage[Prompt: Writer](
     prompt: Prompt,
     taskSpec: TaskSpecification,
     useHttps: Boolean = true,
     headTags: List[TypedTag[String]],
-    bodyEndTags: List[TypedTag[String]])(
-    implicit config: TaskConfig) = {
-    val protocol = if(useHttps) "https:" else "http:"
-    val port = if(useHttps) config.httpsPort else config.httpPort
+    bodyEndTags: List[TypedTag[String]]
+  )(implicit config: TaskConfig) = {
+    val protocol = if (useHttps) "https:" else "http:"
+    val port = if (useHttps) config.httpsPort else config.httpPort
     import config.serverDomain
     import config.projectName
     html(
@@ -39,12 +40,8 @@ object TaskPage {
         // script(
         //   `type` := "text/javascript",
         //   src := s"https://code.jquery.com/jquery-2.1.4.min.js"),
-        script(
-          `type` := "text/javascript",
-          src := s"$protocol//$serverDomain:$port/jsdeps.js"),
-        script(
-          `type` := "text/javascript",
-          src := s"$protocol//$serverDomain:$port/out.js"),
+        script(`type` := "text/javascript", src := s"$protocol//$serverDomain:$port/jsdeps.js"),
+        script(`type` := "text/javascript", src := s"$protocol//$serverDomain:$port/out.js"),
         // script(
         //   `type` := "text/javascript",
         //   src := s"$protocol//$serverDomain:$port/$projectName-jsdeps.js"),
@@ -61,44 +58,47 @@ object TaskPage {
           `type` := "hidden",
           value := write(prompt),
           name := FieldLabels.promptLabel,
-          id := FieldLabels.promptLabel),
+          id := FieldLabels.promptLabel
+        ),
         input(
           `type` := "hidden",
           value := write(serverDomain),
           name := FieldLabels.serverDomainLabel,
-          id := FieldLabels.serverDomainLabel),
+          id := FieldLabels.serverDomainLabel
+        ),
         input(
           `type` := "hidden",
           value := write(config.httpPort),
           name := FieldLabels.httpPortLabel,
-          id := FieldLabels.httpPortLabel),
+          id := FieldLabels.httpPortLabel
+        ),
         input(
           `type` := "hidden",
           value := write(config.httpsPort),
           name := FieldLabels.httpsPortLabel,
-          id := FieldLabels.httpsPortLabel),
+          id := FieldLabels.httpsPortLabel
+        ),
         input(
           `type` := "hidden",
           value := write(taskSpec.taskKey),
           name := FieldLabels.taskKeyLabel,
-          id := FieldLabels.taskKeyLabel),
+          id := FieldLabels.taskKeyLabel
+        ),
         form(
           name := FieldLabels.mturkFormLabel,
           method := "post",
           id := FieldLabels.mturkFormLabel,
-          action := config.externalSubmitURL)(
+          action := config.externalSubmitURL
+        )(
           // where turk puts the assignment ID
-          input(
-            `type` := "hidden",
-            value := "",
-            name := "assignmentId",
-            id := "assignmentId"),
+          input(`type` := "hidden", value := "", name := "assignmentId", id := "assignmentId"),
           // where our client code should put the response
           input(
             `type` := "hidden",
             value := "",
             name := FieldLabels.responseLabel,
-            id := FieldLabels.responseLabel),
+            id := FieldLabels.responseLabel
+          ),
           // and here I'll let the client code do its magic
           div(
             id := FieldLabels.rootClientDivLabel,

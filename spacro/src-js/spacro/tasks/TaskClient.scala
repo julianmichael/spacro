@@ -13,9 +13,9 @@ import upickle.default._
   * Gives access by field to all of the information written into the `TaskPage` on the server.
   */
 abstract class TaskClient[
-  Prompt : Reader,
-  Response : Writer,
-  AjaxRequest <: { type Response } : Writer : ResponseReader
+  Prompt: Reader,
+  Response: Writer,
+  AjaxRequest <: { type Response }: Writer: ResponseReader
 ] {
   import scala.scalajs.js.Dynamic.global
 
@@ -27,7 +27,8 @@ abstract class TaskClient[
   lazy val isNotAssigned = assignmentIdOpt.isEmpty
 
   lazy val workerIdOpt: Option[String] = {
-    Option(global.turkGetParam("workerId", "UNASSIGNED").asInstanceOf[String]).filter(_ != "UNASSIGNED")
+    Option(global.turkGetParam("workerId", "UNASSIGNED").asInstanceOf[String])
+      .filter(_ != "UNASSIGNED")
   }
 
   import FieldLabels._
@@ -51,7 +52,7 @@ abstract class TaskClient[
   lazy val ajaxUri = {
     val isHttps = dom.document.location.protocol == "https:"
     val ajaxHttpProtocol = if (isHttps) "https" else "http"
-    val serverPort = if(isHttps) httpsPort else httpPort
+    val serverPort = if (isHttps) httpsPort else httpPort
     s"$ajaxHttpProtocol://$serverDomain:$serverPort/task/$taskKey/ajax"
   }
 
@@ -59,14 +60,18 @@ abstract class TaskClient[
     import scala.concurrent.ExecutionContext.Implicits.global
     dom.ext.Ajax
       .post(url = ajaxUri, data = write(request))
-      .map(response => read[request.Response](response.responseText)(
-             implicitly[ResponseReader[AjaxRequest]].getReader(request)))
+      .map(
+        response =>
+          read[request.Response](response.responseText)(
+            implicitly[ResponseReader[AjaxRequest]].getReader(request)
+        )
+      )
   }
 
   lazy val websocketUri: String = {
     val isHttps = dom.document.location.protocol == "https:"
     val wsProtocol = if (isHttps) "wss" else "ws"
-    val serverPort = if(isHttps) httpsPort else httpPort
+    val serverPort = if (isHttps) httpsPort else httpPort
     s"$wsProtocol://$serverDomain:$serverPort/task/$taskKey/websocket"
   }
 

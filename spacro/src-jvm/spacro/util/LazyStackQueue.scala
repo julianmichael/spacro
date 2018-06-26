@@ -59,13 +59,14 @@ class LazyStackQueue[A](
     Vector.fill(n)(filterPop(predicate)).flatten.toList
 
   // auxiliary method for managing the middle buffer
-  private[this] def popFromMiddleOption: Option[A] = if(!middle.isEmpty) {
-    Some(middle.dequeue)
-  } else if(source.hasNext) {
-    val result = source.next
-    middle.enqueue(source.take(maxBufferSize).toSeq:_*)
-    Some(result)
-  } else {
-    None
-  }
+  private[this] def popFromMiddleOption: Option[A] =
+    if (!middle.isEmpty) {
+      Some(middle.dequeue)
+    } else if (source.hasNext) {
+      val result = source.next
+      middle.enqueue(source.take(maxBufferSize).toSeq: _*)
+      Some(result)
+    } else {
+      None
+    }
 }

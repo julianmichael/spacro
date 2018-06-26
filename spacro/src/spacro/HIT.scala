@@ -12,8 +12,4 @@ package spacro
   * @param prompt the data used to create the question shown to workers
   * @param creationTime the time (millis from epoch) that the HIT was created
   */
-case class HIT[Prompt](
-  hitTypeId: String,
-  hitId: String,
-  prompt: Prompt,
-  creationTime: Long)
+case class HIT[Prompt](hitTypeId: String, hitId: String, prompt: Prompt, creationTime: Long)

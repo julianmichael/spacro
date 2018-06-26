@@ -35,9 +35,11 @@ class AsyncContentComponent[Response] {
     getContent: () => Future[Response],
     willLoad: (Response => Callback) = (_ => Callback.empty),
     didLoad: (Response => Callback) = (_ => Callback.empty),
-    render: (AsyncContentState => VdomElement))
+    render: (AsyncContentState => VdomElement)
+  )
 
   class AsyncContentBackend(scope: BackendScope[AsyncContentProps, AsyncContentState]) {
+
     def load(props: AsyncContentProps): Callback = Callback.future {
       props.getContent().map { response =>
         props.willLoad(response) >> scope.setState(Loaded(response)) >> props.didLoad(response)
@@ -48,7 +50,8 @@ class AsyncContentComponent[Response] {
       props.render(s)
   }
 
-  val AsyncContent = ScalaComponent.builder[AsyncContentProps]("Ajax Loadable")
+  val AsyncContent = ScalaComponent
+    .builder[AsyncContentProps]("Ajax Loadable")
     .initialState(Loading: AsyncContentState)
     .renderBackend[AsyncContentBackend]
     .componentDidMount(context => context.backend.load(context.props))

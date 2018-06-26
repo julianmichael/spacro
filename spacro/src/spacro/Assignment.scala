@@ -30,5 +30,5 @@ case class Assignment[Response](
   acceptTime: Long,
   submitTime: Long,
   response: Response,
-  feedback: String)
-
+  feedback: String
+)

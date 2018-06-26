@@ -32,7 +32,8 @@ class ReferenceComponent[A <: vdom.TopNode] {
       props.render(props.referencedTag.ref(reference = _), state)
   }
 
-  val Reference = ScalaComponent.builder[ReferenceProps]("Reference")
+  val Reference = ScalaComponent
+    .builder[ReferenceProps]("Reference")
     .initialState(None: ReferenceState)
     .renderBackend[ReferenceBackend]
     .componentDidMount(_.backend.setReference)

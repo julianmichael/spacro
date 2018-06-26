@@ -25,7 +25,7 @@ trait TaskDispatcher {
     global.turkSetAssignmentID()
     // dispatch to specific task
     taskMapping.get(taskKey) match {
-      case None => System.err.println(s"Invalid task key: $taskKey")
+      case None       => System.err.println(s"Invalid task key: $taskKey")
       case Some(func) => func()
     }
   }

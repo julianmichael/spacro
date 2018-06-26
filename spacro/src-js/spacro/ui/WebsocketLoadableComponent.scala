@@ -24,23 +24,26 @@ import japgolly.scalajs.react.MonocleReact._
 
 import upickle.default._
 
-class WebsocketLoadableComponent[Request : Writer, Response : Reader] {
+class WebsocketLoadableComponent[Request: Writer, Response: Reader] {
 
   sealed trait WebsocketLoadableState
   case object Connecting extends WebsocketLoadableState
   case object Loading extends WebsocketLoadableState
-  case class Loaded(
-    content: Response,
-    sendMessage: Request => Callback) extends WebsocketLoadableState
+  case class Loaded(content: Response, sendMessage: Request => Callback)
+      extends WebsocketLoadableState
 
   case class WebsocketLoadableProps(
     websocketURI: String,
     request: Request,
     onLoad: (Response => Callback) = (_ => Callback.empty),
     onMessage: (Response => Callback) = (_ => Callback.empty),
-    render: (WebsocketLoadableState => VdomElement))
+    render: (WebsocketLoadableState => VdomElement)
+  )
 
-  class WebsocketLoadableBackend(scope: BackendScope[WebsocketLoadableProps, WebsocketLoadableState]) {
+  class WebsocketLoadableBackend(
+    scope: BackendScope[WebsocketLoadableProps, WebsocketLoadableState]
+  ) {
+
     def load(props: WebsocketLoadableProps): Callback = scope.state map {
       case Connecting =>
         val socket = new WebSocket(props.websocketURI)
@@ -56,23 +59,39 @@ class WebsocketLoadableComponent[Request : Writer, Response : Reader] {
           val msg = event.data.toString
           read[HeartbeatingWebSocketMessage[Response]](msg) match {
             case Heartbeat => socket.send(msg)
-            case WebSocketMessage(response) => scope.modState {
-              case Connecting =>
-                System.err.println("Received message before socket opened?")
-                props.onLoad(response).runNow
-                Loaded(response, (r: Request) => Callback(socket.send(write[HeartbeatingWebSocketMessage[Request]](WebSocketMessage(r)))))
-              case Loading =>
-                props.onLoad(response).runNow
-                Loaded(response, (r: Request) => Callback(socket.send(write[HeartbeatingWebSocketMessage[Request]](WebSocketMessage(r)))))
-              case l @ Loaded(_, _) =>
-                props.onMessage(response).runNow
-                l
-            }.runNow
+            case WebSocketMessage(response) =>
+              scope.modState {
+                case Connecting =>
+                  System.err.println("Received message before socket opened?")
+                  props.onLoad(response).runNow
+                  Loaded(
+                    response,
+                    (r: Request) =>
+                      Callback(
+                        socket
+                          .send(write[HeartbeatingWebSocketMessage[Request]](WebSocketMessage(r)))
+                    )
+                  )
+                case Loading =>
+                  props.onLoad(response).runNow
+                  Loaded(
+                    response,
+                    (r: Request) =>
+                      Callback(
+                        socket
+                          .send(write[HeartbeatingWebSocketMessage[Request]](WebSocketMessage(r)))
+                    )
+                  )
+                case l @ Loaded(_, _) =>
+                  props.onMessage(response).runNow
+                  l
+              }.runNow
           }
         }
         socket.onclose = { (event: CloseEvent) =>
-          val cleanly = if(event.wasClean) "cleanly" else "uncleanly"
-          val msg = s"WebSocket connection closed $cleanly with code ${event.code}. reason: ${event.reason}"
+          val cleanly = if (event.wasClean) "cleanly" else "uncleanly"
+          val msg =
+            s"WebSocket connection closed $cleanly with code ${event.code}. reason: ${event.reason}"
           System.err.println(msg)
         }
       case Loading =>
@@ -85,7 +104,8 @@ class WebsocketLoadableComponent[Request : Writer, Response : Reader] {
       props.render(s)
   }
 
-  val WebsocketLoadable = ScalaComponent.builder[WebsocketLoadableProps]("Websocket Loadable")
+  val WebsocketLoadable = ScalaComponent
+    .builder[WebsocketLoadableProps]("Websocket Loadable")
     .initialState(Connecting: WebsocketLoadableState)
     .renderBackend[WebsocketLoadableBackend]
     .componentDidMount(context => context.backend.load(context.props))

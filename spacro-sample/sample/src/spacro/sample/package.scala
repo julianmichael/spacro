@@ -20,6 +20,7 @@ package object sample {
   case class SampleAjaxRequest(prompt: SamplePrompt) {
     type Response = SampleAjaxResponse
   }
+
   object SampleAjaxRequest {
     import spacro.tasks._
     import upickle.default._

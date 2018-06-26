@@ -5,6 +5,7 @@ import upickle.default._
 trait Service[Request <: { type Response }] {
   def processRequest(request: Request): request.Response
 }
+
 object Service {
   case class UnitRequest() { final type Response = Unit }
   case object UnitRequest {

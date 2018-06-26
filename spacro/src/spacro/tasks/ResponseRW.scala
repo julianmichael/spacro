@@ -12,4 +12,5 @@ trait ResponseWriter[Request <: { type Response }] {
 
 trait ResponseRW[
   Request <: { type Response }
-] extends ResponseReader[Request] with ResponseWriter[Request]
+] extends ResponseReader[Request]
+    with ResponseWriter[Request]

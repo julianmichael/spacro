@@ -24,13 +24,12 @@ class SampleExperiment(implicit config: TaskConfig) {
     reward = 0.10,
     keywords = "language,english,question answering",
     autoApprovalDelay = 2592000L,
-    assignmentDuration = 600L)
+    assignmentDuration = 600L
+  )
 
   // Then, you need some source of prompts which you will get responses to over turk.
   // in the sample task, these prompts are just strings.
-  val sentences = List(
-    "Hello, this is a sentence.",
-    "This is another sentence.")
+  val sentences = List("Hello, this is a sentence.", "This is another sentence.")
 
   // you must define a Flow (type is from akka-http) for this task, which will determine how
   // the server responds to WebSocket messages from clients.
@@ -40,6 +39,7 @@ class SampleExperiment(implicit config: TaskConfig) {
   // }
 
   lazy val sampleAjaxService = new Service[SampleAjaxRequest] {
+
     def processRequest(request: SampleAjaxRequest) =
       SampleAjaxResponse(sentences(request.prompt.id))
   }
@@ -49,8 +49,13 @@ class SampleExperiment(implicit config: TaskConfig) {
   val samplePrompts = Vector(SamplePrompt(0))
 
   // the task specification is defined on the basis of the above fields
-  lazy val taskSpec = TaskSpecification.NoWebsockets[SamplePrompt, SampleResponse, SampleAjaxRequest](
-    sampleTaskKey, sampleHITType, sampleAjaxService, samplePrompts)
+  lazy val taskSpec =
+    TaskSpecification.NoWebsockets[SamplePrompt, SampleResponse, SampleAjaxRequest](
+      sampleTaskKey,
+      sampleHITType,
+      sampleAjaxService,
+      samplePrompts
+    )
 
   // you will probably always construct a HITManager.Helper in this way for your HITManager instance
   // that will coordinate the reviewing and uploading of assignments and HITs.
@@ -61,8 +66,11 @@ class SampleExperiment(implicit config: TaskConfig) {
   // the sample task just uses a NumAssignmentsHITManager, which coordinates so that
   // it gets a fixed number of approved assignments for every HIT.
   lazy val hitManager = actorSystem.actorOf(
-    Props(NumAssignmentsHITManager.constAssignments[SamplePrompt, SampleResponse](
-            helper, 1, 3, samplePrompts.iterator)))
+    Props(
+      NumAssignmentsHITManager
+        .constAssignments[SamplePrompt, SampleResponse](helper, 1, 3, samplePrompts.iterator)
+    )
+  )
 
   // then you create the web server which will host the service
   // (the server MUST BE LIVE as long as the HITs are on Turk)
@@ -74,6 +82,7 @@ class SampleExperiment(implicit config: TaskConfig) {
 
   // and finally you will probably want some convenience methods for controlling the task from the console.
   import TaskManager.Message._
+
   def start(interval: FiniteDuration = 1 minute) = {
     server
     actor ! Start(interval)
@@ -81,6 +90,7 @@ class SampleExperiment(implicit config: TaskConfig) {
   def stop = actor ! Stop
   def expire = actor ! Expire
   def delete = actor ! Delete
+
   def update = {
     server
     actor ! Update

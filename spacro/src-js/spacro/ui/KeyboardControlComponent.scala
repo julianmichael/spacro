@@ -13,9 +13,11 @@ object KeyboardControlComponent {
   case class KeyboardControlProps(
     handleKey: ReactKeyboardEvent => Callback,
     message: String,
-    render: VdomTag)
+    render: VdomTag
+  )
 
   class KeyboardControlBackend(scope: BackendScope[KeyboardControlProps, KeyboardControlState]) {
+
     def render(props: KeyboardControlProps, state: KeyboardControlState) = <.div(
       ^.tabIndex := 0,
       ^.onFocus --> scope.modState(KeyboardControlState.isFocused.set(true)),
@@ -37,7 +39,8 @@ object KeyboardControlComponent {
     )
   }
 
-  val KeyboardControl = ScalaComponent.builder[KeyboardControlProps]("Keyboard Control")
+  val KeyboardControl = ScalaComponent
+    .builder[KeyboardControlProps]("Keyboard Control")
     .initialState(KeyboardControlState(false))
     .renderBackend[KeyboardControlBackend]
     .build

@@ -26,10 +26,12 @@ object Client extends TaskClient[SamplePrompt, SampleResponse, SampleAjaxRequest
 
   sealed trait State
   case object Loading extends State
+
   @Lenses case class Loaded(
     sentence: String,
     isGood: Boolean
   ) extends State
+
   object State {
     def loading[A]: Prism[State, Loading.type] = GenPrism[State, Loading.type]
     def loaded[A]: Prism[State, Loaded] = GenPrism[State, Loaded]
@@ -38,18 +40,19 @@ object Client extends TaskClient[SamplePrompt, SampleResponse, SampleAjaxRequest
   val isGoodLens = State.loaded composeLens Loaded.isGood
 
   class FullUIBackend(scope: BackendScope[Unit, State]) {
+
     def load: Callback = Callback.future {
       makeAjaxRequest(SampleAjaxRequest(prompt)).map {
         case SampleAjaxResponse(sentence) =>
           scope.modState {
-            case Loading => Loaded(sentence, false)
+            case Loading          => Loaded(sentence, false)
             case l @ Loaded(_, _) => System.err.println("Data already loaded."); l
           }
       }
     }
 
-    def updateResponse: Callback = scope.state.map {
-      st => isGoodLens.getOption(st).map(SampleResponse.apply).foreach(setResponse)
+    def updateResponse: Callback = scope.state.map { st =>
+      isGoodLens.getOption(st).map(SampleResponse.apply).foreach(setResponse)
     }
 
     def render(s: State) = {
@@ -87,14 +90,16 @@ object Client extends TaskClient[SamplePrompt, SampleResponse, SampleAjaxRequest
                 ^.`type` := "submit",
                 ^.disabled := isNotAssigned,
                 ^.id := FieldLabels.submitButtonLabel,
-                ^.value := "submit")
+                ^.value := "submit"
+              )
             )
         }
       )
     }
   }
 
-  val FullUI = ScalaComponent.builder[Unit]("Full UI")
+  val FullUI = ScalaComponent
+    .builder[Unit]("Full UI")
     .initialState(Loading: State)
     .renderBackend[FullUIBackend]
     .componentDidMount(context => context.backend.load)
@@ -114,12 +119,14 @@ object Client extends TaskClient[SamplePrompt, SampleResponse, SampleAjaxRequest
            because in pre-colonial times, mothers farmed and traded."""),
       <.li("""Chudi does not deserve any special gratitude or praise, nor do you -
            you both made the choice to bring a child into the world,
-           and the responsibility for that child belongs equally to you both.""")),
+           and the responsibility for that child belongs equally to you both.""")
+    ),
     <.p("""Examples of not-good sentences include:"""),
     <.ul(
       <.li("""So because of her unfounded concern over vote rigging, she committed voter fraud."""),
       <.li("""Comey told FBI employees he didn't want to "be misleading to the American people"
-           by not supplementing the record of the investigation.""")),
+           by not supplementing the record of the investigation.""")
+    ),
     <.hr(),
     <.p(s"""Please indicate whether the following sentence is good:""")
   )

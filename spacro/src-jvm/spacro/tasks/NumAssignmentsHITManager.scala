@@ -4,7 +4,7 @@ import spacro._
 import spacro.util._
 
 import scala.collection.mutable
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 
 import upickle.default.Reader
 
@@ -20,13 +20,21 @@ import com.typesafe.scalalogging.StrictLogging
 case class SetNumHITsActive(value: Int)
 
 object NumAssignmentsHITManager {
+
   def constAssignments[Prompt, Response](
     helper: HITManager.Helper[Prompt, Response],
     numAssignmentsPerPrompt: Int,
     initNumHITsToKeepActive: Int,
     _promptSource: Iterator[Prompt],
-    shouldReviewPartiallyCompletedHITs: Boolean = true) = new NumAssignmentsHITManager[Prompt, Response](
-    helper, _ => numAssignmentsPerPrompt, initNumHITsToKeepActive, _promptSource, shouldReviewPartiallyCompletedHITs)
+    shouldReviewPartiallyCompletedHITs: Boolean = true
+  ) =
+    new NumAssignmentsHITManager[Prompt, Response](
+      helper,
+      _ => numAssignmentsPerPrompt,
+      initNumHITsToKeepActive,
+      _promptSource,
+      shouldReviewPartiallyCompletedHITs
+    )
 }
 
 /** Simplest HIT manager, which gets a fixed number of assignments for every prompt
@@ -40,7 +48,8 @@ class NumAssignmentsHITManager[Prompt, Response](
   initNumHITsToKeepActive: Int,
   _promptSource: Iterator[Prompt],
   shouldReviewPartiallyCompletedHITs: Boolean = true
-) extends HITManager[Prompt, Response](helper) with StrictLogging {
+) extends HITManager[Prompt, Response](helper)
+    with StrictLogging {
 
   var numHITsToKeepActive: Int = initNumHITsToKeepActive
 
@@ -48,9 +57,9 @@ class NumAssignmentsHITManager[Prompt, Response](
   def receiveAux2: PartialFunction[Any, Unit] =
     PartialFunction.empty[Any, Unit]
 
-  override lazy val receiveAux: PartialFunction[Any, Unit] = (
-    { case SetNumHITsActive(n) => numHITsToKeepActive = n }: PartialFunction[Any, Unit]
-  ) orElse receiveAux2
+  override lazy val receiveAux: PartialFunction[Any, Unit] = ({
+    case SetNumHITsActive(n) => numHITsToKeepActive = n
+  }: PartialFunction[Any, Unit]) orElse receiveAux2
 
   import helper.config
   import helper.taskSpec.hitTypeId
@@ -59,7 +68,7 @@ class NumAssignmentsHITManager[Prompt, Response](
   // override for more interesting review policy
   def reviewAssignment(hit: HIT[Prompt], assignment: Assignment[Response]): Unit = {
     helper.evaluateAssignment(hit, helper.startReviewing(assignment), Approval(""))
-    if(!assignment.feedback.isEmpty) {
+    if (!assignment.feedback.isEmpty) {
       logger.info(s"Feedback: ${assignment.feedback}")
     }
   }
@@ -80,16 +89,17 @@ class NumAssignmentsHITManager[Prompt, Response](
   // upload new hits to fill gaps
   def refreshHITs = {
     val numToUpload = numHITsToKeepActive - helper.numActiveHITs
-    for(_ <- 1 to numToUpload) {
+    for (_ <- 1 to numToUpload) {
       queuedPrompts.filterPop(p => !isFinished(p)) match {
         case None => () // we're finishing off, woo
         case Some(nextPrompt) =>
-          if(helper.isActive(nextPrompt)) {
+          if (helper.isActive(nextPrompt)) {
             // if this prompt is already active, queue it for later
             // TODO probably want to delay it by a constant factor instead
             queuedPrompts.enqueue(nextPrompt)
           } else {
-            val numFinishedAssignments = helper.finishedHITInfos(nextPrompt).map(_.assignments.size).sum
+            val numFinishedAssignments =
+              helper.finishedHITInfos(nextPrompt).map(_.assignments.size).sum
             // following will be > 0 because isFinished was false
             val numRemainingAssignments = numAssignmentsForPrompt(nextPrompt) - numFinishedAssignments
             helper.createHIT(nextPrompt, numRemainingAssignments) recover {
@@ -103,21 +113,23 @@ class NumAssignmentsHITManager[Prompt, Response](
   import scala.collection.JavaConverters._
 
   final override def reviewHITs: Unit = {
-    def reviewAssignmentsForHIT(hit: HIT[Prompt]) = for {
-      getAssignmentsResult <- Try(
-        config.service.listAssignmentsForHIT(
-          (new ListAssignmentsForHITRequest)
-            .withHITId(hit.hitId)
-            .withMaxResults(numAssignmentsForPrompt(hit.prompt))
-            .withAssignmentStatuses(AssignmentStatus.Submitted))
-      ).toOptionLogging(logger).toList
-      mTurkAssignment <- getAssignmentsResult.getAssignments.asScala
-      assignment = helper.taskSpec.makeAssignment(hit.hitId, mTurkAssignment)
-      if !helper.isInReview(assignment)
-    } yield {
-      reviewAssignment(hit, assignment)
-      assignment
-    }
+    def reviewAssignmentsForHIT(hit: HIT[Prompt]) =
+      for {
+        getAssignmentsResult <- Try(
+          config.service.listAssignmentsForHIT(
+            (new ListAssignmentsForHITRequest)
+              .withHITId(hit.hitId)
+              .withMaxResults(numAssignmentsForPrompt(hit.prompt))
+              .withAssignmentStatuses(AssignmentStatus.Submitted)
+          )
+        ).toOptionLogging(logger).toList
+        mTurkAssignment <- getAssignmentsResult.getAssignments.asScala
+        assignment = helper.taskSpec.makeAssignment(hit.hitId, mTurkAssignment)
+        if !helper.isInReview(assignment)
+      } yield {
+        reviewAssignment(hit, assignment)
+        assignment
+      }
 
     // reviewable HITs; will always cover <= 100 HITs asking for only one assignment
     // it's rare that there are more than 100 reviewable HITs in one update,
@@ -128,17 +140,21 @@ class NumAssignmentsHITManager[Prompt, Response](
         config.service.listReviewableHITs(
           (new ListReviewableHITsRequest)
             .withHITTypeId(hitTypeId)
-            .withMaxResults(100))
+            .withMaxResults(100)
+        )
       ).toOptionLogging(logger).toList
       mTurkHIT <- reviewableHITsResult.getHITs.asScala
-      hit <- config.hitDataService.getHIT[Prompt](hitTypeId, mTurkHIT.getHITId).toOptionLogging(logger).toList
+      hit <- config.hitDataService
+        .getHIT[Prompt](hitTypeId, mTurkHIT.getHITId)
+        .toOptionLogging(logger)
+        .toList
     } yield {
       val assignmentSubmissions = reviewAssignmentsForHIT(hit)
       // if the HIT is "reviewable", and all its assignments are no longer "Submitted"
       // (in which case the above list would be empty), we can delete the HIT
-      if(assignmentSubmissions.isEmpty) {
+      if (assignmentSubmissions.isEmpty) {
         helper.deleteHIT(hit)
-        if(isFinished(hit.prompt)) {
+        if (isFinished(hit.prompt)) {
           promptFinished(hit.prompt)
         }
       }
@@ -147,10 +163,10 @@ class NumAssignmentsHITManager[Prompt, Response](
     val reviewableHITSet = reviewableHITs.toSet
 
     // for HITs asking for more than one assignment, we want to check those manually
-    if(shouldReviewPartiallyCompletedHITs) {
+    if (shouldReviewPartiallyCompletedHITs) {
       for {
         (prompt, hitInfos) <- helper.activeHITInfosByPromptIterator.toList
-        HITInfo(hit, _) <- hitInfos
+        HITInfo(hit, _)    <- hitInfos
         if numAssignmentsForPrompt(hit.prompt) > 1 && !reviewableHITSet.contains(hit)
       } yield reviewAssignmentsForHIT(hit)
     }

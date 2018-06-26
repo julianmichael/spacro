@@ -1,4 +1,5 @@
 import mill._, mill.scalalib._, mill.scalalib.publish._, mill.scalajslib._
+import mill.scalalib.scalafmt._
 import ammonite.ops._
 
 val thisScalaVersion = "2.11.12"
@@ -37,7 +38,7 @@ trait SimpleJSDeps extends Module {
   }
 }
 
-trait SpacroSampleModule extends ScalaModule {
+trait SpacroSampleModule extends ScalaModule with ScalafmtModule {
 
   def scalaVersion = thisScalaVersion
 

@@ -29,10 +29,12 @@ class LocalStateComponent[A] {
   type LocalStateContext = A => Callback
   case class LocalStateProps(
     initialValue: A,
-    render: (LocalStateState, LocalStateContext) => VdomElement)
+    render: (LocalStateState, LocalStateContext) => VdomElement
+  )
+
   object LocalProps {
-    def apply(
-      render: (LocalStateState, LocalStateContext) => VdomElement)(
+
+    def apply(render: (LocalStateState, LocalStateContext) => VdomElement)(
       implicit m: Monoid[A]
     ): LocalStateProps =
       LocalStateProps(m.empty, render)
@@ -44,7 +46,8 @@ class LocalStateComponent[A] {
     def render(props: LocalStateProps, state: LocalStateState) = props.render(state, context)
   }
 
-  val LocalState = ScalaComponent.builder[LocalStateProps]("Local")
+  val LocalState = ScalaComponent
+    .builder[LocalStateProps]("Local")
     .initialStateFromProps(_.initialValue)
     .renderBackend[LocalStateBackend]
     .build

@@ -3,17 +3,17 @@ package spacro.tasks
 import spacro._
 
 import java.io.InputStream
-import java.security.{ SecureRandom, KeyStore }
-import javax.net.ssl.{ SSLContext, TrustManagerFactory, KeyManagerFactory }
+import java.security.{KeyStore, SecureRandom}
+import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.server.{ RouteResult, Route, Directives }
-import akka.http.scaladsl.{ ConnectionContext, HttpsConnectionContext, Http }
+import akka.http.scaladsl.server.{Directives, Route, RouteResult}
+import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import akka.stream.Materializer
 import akka.stream.ActorMaterializer
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
 
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 
 import com.typesafe.scalalogging.StrictLogging
 
@@ -37,7 +37,9 @@ class Server(tasks: List[TaskSpecification])(implicit config: TaskConfig) extend
   httpBinding.onComplete {
     case Success(binding) ⇒
       val localAddress = binding.localAddress
-      logger.info(s"Server is listening on http://${localAddress.getHostName}:${localAddress.getPort}")
+      logger.info(
+        s"Server is listening on http://${localAddress.getHostName}:${localAddress.getPort}"
+      )
     case Failure(e) ⇒
       logger.error(s"HTTP binding failed: $e")
   }
@@ -50,7 +52,8 @@ class Server(tasks: List[TaskSpecification])(implicit config: TaskConfig) extend
     ).next.toCharArray
 
     val ks: KeyStore = KeyStore.getInstance("PKCS12")
-    val keystore: InputStream = getClass.getClassLoader.getResourceAsStream(s"${config.serverDomain}.p12")
+    val keystore: InputStream =
+      getClass.getClassLoader.getResourceAsStream(s"${config.serverDomain}.p12")
 
     require(keystore != null, "Keystore required!")
     ks.load(keystore, password)
@@ -66,11 +69,18 @@ class Server(tasks: List[TaskSpecification])(implicit config: TaskConfig) extend
 
     val https = ConnectionContext.https(sslContext)
 
-    val httpsBinding = Http().bindAndHandle(service.route, config.interface, config.httpsPort, connectionContext = https)
+    val httpsBinding = Http().bindAndHandle(
+      service.route,
+      config.interface,
+      config.httpsPort,
+      connectionContext = https
+    )
     httpsBinding.onComplete {
       case Success(binding) ⇒
         val localAddress = binding.localAddress
-        logger.info(s"Server is listening on https://${localAddress.getHostName}:${localAddress.getPort}")
+        logger.info(
+          s"Server is listening on https://${localAddress.getHostName}:${localAddress.getPort}"
+        )
       case Failure(e) ⇒
         logger.warn(s"HTTPS binding failed: $e")
     }

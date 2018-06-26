@@ -18,14 +18,14 @@ trait HITDataService {
   /** Save a HIT that has been uploaded to MTurk.
     * This should happen directly after successful HIT creation.
     */
-  def saveHIT[Prompt : Writer](
+  def saveHIT[Prompt: Writer](
     hit: HIT[Prompt]
   ): Try[Unit]
 
   /** Get a stored HIT by its HIT Type ID and HIT ID, which together uniquely identify it.
     * (HIT ID may already be unique; I'm not sure.)
     */
-  def getHIT[Prompt : Reader](
+  def getHIT[Prompt: Reader](
     hitTypeId: String,
     hitId: String
   ): Try[HIT[Prompt]]
@@ -33,31 +33,31 @@ trait HITDataService {
   /** Save the data of an assignment that has been approved on MTurk.
     * Should happen directly after the assignment is approved.
     */
-  def saveApprovedAssignment[Response : Writer](
+  def saveApprovedAssignment[Response: Writer](
     assignment: Assignment[Response]
   ): Try[Unit]
 
   /** Save the data of an assignment that has been rejected on MTurk.
     * Should happen directly after the assignment is rejected.
     */
-  def saveRejectedAssignment[Response : Writer](
+  def saveRejectedAssignment[Response: Writer](
     assignment: Assignment[Response]
   ): Try[Unit]
 
   /** Get a saved HIT and all data relevant to that HIT. */
-  def getHITInfo[Prompt: Reader, Response : Reader](
+  def getHITInfo[Prompt: Reader, Response: Reader](
     hitTypeId: String,
     hitId: String
   ): Try[HITInfo[Prompt, Response]]
 
   /** Get all saved HIT data for a given HIT Type. */
-  def getAllHITInfo[Prompt: Reader, Response : Reader](
+  def getAllHITInfo[Prompt: Reader, Response: Reader](
     hitTypeId: String
   ): Try[List[HITInfo[Prompt, Response]]]
 
   // TODO implement the below in terms of getHITInfo
   /** Get all assignments for a given HIT. */
-  def getAssignmentsForHIT[Response : Reader](
+  def getAssignmentsForHIT[Response: Reader](
     hitTypeId: String,
     hitId: String
   ): Try[List[Assignment[Response]]]

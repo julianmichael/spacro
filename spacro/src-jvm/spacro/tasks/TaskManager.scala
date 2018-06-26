@@ -3,7 +3,7 @@ package spacro.tasks
 import spacro._
 import spacro.util._
 
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -23,7 +23,8 @@ import com.typesafe.scalalogging.StrictLogging
 class TaskManager[Prompt, Response](
   hitManagementHelper: HITManager.Helper[Prompt, Response],
   hitManager: ActorRef
-) extends Actor with StrictLogging {
+) extends Actor
+    with StrictLogging {
 
   import TaskManager.Message._
   import hitManagementHelper.Message._
@@ -32,10 +33,10 @@ class TaskManager[Prompt, Response](
 
   override def receive = {
     case Start(interval, delay) => start(interval, delay)
-    case Stop => stop
-    case Update => update
-    case Expire => expire
-    case Delete => delete
+    case Stop                   => stop
+    case Update                 => update
+    case Expire                 => expire
+    case Delete                 => delete
   }
 
   // used to schedule updates once this has started
@@ -43,8 +44,11 @@ class TaskManager[Prompt, Response](
 
   // begin updating / polling the MTurk API
   private[this] def start(interval: FiniteDuration, delay: FiniteDuration): Unit = {
-    if(schedule.fold(true)(_.isCancelled)) {
-      schedule = Some(context.system.scheduler.schedule(delay, interval, self, Update)(context.system.dispatcher, self))
+    if (schedule.fold(true)(_.isCancelled)) {
+      schedule = Some(
+        context.system.scheduler
+          .schedule(delay, interval, self, Update)(context.system.dispatcher, self)
+      )
     }
   }
 
@@ -75,6 +79,7 @@ class TaskManager[Prompt, Response](
 }
 
 object TaskManager {
+
   object Message {
     sealed trait Message
     case class Start(interval: FiniteDuration, delay: FiniteDuration = 2 seconds) extends Message

@@ -1,6 +1,6 @@
 package spacro
 
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 
 import scala.collection.mutable
 import scala.collection.TraversableOnce
@@ -23,6 +23,7 @@ import com.amazonaws.services.mturk.model.ListQualificationTypesRequest
 package object util {
   // this is basically what we want to do with most errors
   protected[spacro] implicit class RichTry[A](val t: Try[A]) extends AnyVal {
+
     def toOptionLogging(logger: Logger): Option[A] = t match {
       case Success(a) =>
         Some(a)
@@ -39,11 +40,11 @@ package object util {
   // also they should seriously already exist...
 
   protected[spacro] implicit class RichMutableStack[A](val s: mutable.Stack[A]) extends AnyVal {
-    def popOption: Option[A] = if(!s.isEmpty) Some(s.pop) else None
+    def popOption: Option[A] = if (!s.isEmpty) Some(s.pop) else None
   }
 
   protected[spacro] implicit class RichMutableQueue[A](val q: mutable.Queue[A]) extends AnyVal {
-    def dequeueOption: Option[A] = if(!q.isEmpty) Some(q.dequeue) else None
+    def dequeueOption: Option[A] = if (!q.isEmpty) Some(q.dequeue) else None
   }
 
   // convenience methods for mturk
@@ -53,14 +54,17 @@ package object util {
     import scala.annotation.tailrec
 
     def listAllHITs = {
-      @tailrec def getAllHITsAux(hitsSoFar: Vector[MTurkHIT], request: ListHITsRequest): Vector[MTurkHIT] = {
+      @tailrec def getAllHITsAux(
+        hitsSoFar: Vector[MTurkHIT],
+        request: ListHITsRequest
+      ): Vector[MTurkHIT] = {
         val nextPage = client.listHITs(request)
         val (newHITs, nextToken) = (nextPage.getHITs, nextPage.getNextToken)
-        if(newHITs == null) {
+        if (newHITs == null) {
           hitsSoFar
         } else {
           val aggHITs = hitsSoFar ++ nextPage.getHITs.asScala
-          if(nextToken == null) {
+          if (nextToken == null) {
             aggHITs
           } else {
             getAllHITsAux(aggHITs, request.withNextToken(nextToken))
@@ -71,14 +75,17 @@ package object util {
     }
 
     def listAllWorkersWithQualificationType(qualTypeId: String): Vector[String] = {
-      @tailrec def getAllWorkersWithQualTypeAux(workersSoFar: Vector[String], request: ListWorkersWithQualificationTypeRequest): Vector[String] = {
+      @tailrec def getAllWorkersWithQualTypeAux(
+        workersSoFar: Vector[String],
+        request: ListWorkersWithQualificationTypeRequest
+      ): Vector[String] = {
         val nextPage = client.listWorkersWithQualificationType(request)
         val (nextQualifications, nextToken) = (nextPage.getQualifications, nextPage.getNextToken)
-        if(nextQualifications == null) {
+        if (nextQualifications == null) {
           workersSoFar
         } else {
           val aggWorkers = workersSoFar ++ nextQualifications.asScala.toVector.map(_.getWorkerId)
-          if(nextToken == null) {
+          if (nextToken == null) {
             aggWorkers
           } else {
             getAllWorkersWithQualTypeAux(aggWorkers, request.withNextToken(nextToken))
@@ -89,18 +96,22 @@ package object util {
         Vector.empty[String],
         new ListWorkersWithQualificationTypeRequest()
           .withQualificationTypeId(qualTypeId)
-          .withMaxResults(100))
+          .withMaxResults(100)
+      )
     }
 
     def listAllQualificationTypes(request: ListQualificationTypesRequest) = {
-      @tailrec def listAllQualificationTypesAux(qualTypesSoFar: Vector[QualificationType], req: ListQualificationTypesRequest): Vector[QualificationType] = {
+      @tailrec def listAllQualificationTypesAux(
+        qualTypesSoFar: Vector[QualificationType],
+        req: ListQualificationTypesRequest
+      ): Vector[QualificationType] = {
         val nextPage = client.listQualificationTypes(request)
         val (nextQualTypes, nextToken) = (nextPage.getQualificationTypes, nextPage.getNextToken)
-        if(nextQualTypes == null) {
+        if (nextQualTypes == null) {
           qualTypesSoFar
         } else {
           val aggQualTypes = qualTypesSoFar ++ nextQualTypes.asScala.toVector
-          if(nextToken == null) {
+          if (nextToken == null) {
             aggQualTypes
           } else {
             listAllQualificationTypesAux(aggQualTypes, req.withNextToken(nextToken))

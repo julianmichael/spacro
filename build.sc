@@ -1,8 +1,11 @@
 import mill._, mill.scalalib._, mill.scalalib.publish._, mill.scalajslib._
+import mill.scalalib.scalafmt._
 import mill.util.Ctx
 import mill.define.Cross
 import coursier.maven.MavenRepository
 import ammonite.ops._
+
+val thisPublishVersion = "0.1.1-SNAPSHOT"
 
 val scalaVersions = List("2.11.12", "2.12.6")
 val thisScalaJSVersion = "0.6.23"
@@ -27,7 +30,7 @@ val scalajsJqueryVersion = "0.9.3"
 val scalajsReactVersion = "1.1.0"
 val scalajsScalaCSSVersion = "0.5.3"
 
-trait SpacroModule extends CrossScalaModule with PublishModule {
+trait SpacroModule extends CrossScalaModule with PublishModule with ScalafmtModule {
 
   def platformSegment: String
 
@@ -58,7 +61,7 @@ trait SpacroModule extends CrossScalaModule with PublishModule {
   // publish settings
 
   def artifactName = "spacro"
-  def publishVersion = "0.1.0"
+  def publishVersion = thisPublishVersion
   def pomSettings = PomSettings(
     description = artifactName(),
     organization = "org.julianmichael",

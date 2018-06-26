@@ -24,7 +24,7 @@ import japgolly.scalajs.react.MonocleReact._
 
 import upickle.default._
 
-class WebsocketComponent[Request : Writer, Response : Reader] {
+class WebsocketComponent[Request: Writer, Response: Reader] {
 
   sealed trait WebsocketState
   case object Connecting extends WebsocketState
@@ -33,17 +33,25 @@ class WebsocketComponent[Request : Writer, Response : Reader] {
   case class WebsocketProps(
     websocketURI: String,
     onMessage: (Response => Callback) = (_ => Callback.empty),
-    render: (WebsocketState => VdomElement))
+    render: (WebsocketState => VdomElement)
+  )
 
   class WebsocketBackend(scope: BackendScope[WebsocketProps, WebsocketState]) {
+
     def connect(props: WebsocketProps): Callback = scope.state map {
       case Connecting =>
         val socket = new WebSocket(props.websocketURI)
         socket.onopen = { (event: Event) =>
-          scope.setState(
-            Connected((r: Request) =>
-              Callback(socket.send(write[HeartbeatingWebSocketMessage[Request]](WebSocketMessage(r)))
-            ))).runNow
+          scope
+            .setState(
+              Connected(
+                (r: Request) =>
+                  Callback(
+                    socket.send(write[HeartbeatingWebSocketMessage[Request]](WebSocketMessage(r)))
+                )
+              )
+            )
+            .runNow
         }
         socket.onerror = { (event: Event) =>
           val msg = s"Connection failure. Error: $event"
@@ -52,13 +60,14 @@ class WebsocketComponent[Request : Writer, Response : Reader] {
         socket.onmessage = { (event: MessageEvent) =>
           val msg = event.data.toString
           read[HeartbeatingWebSocketMessage[Response]](msg) match {
-            case Heartbeat => socket.send(msg)
+            case Heartbeat                  => socket.send(msg)
             case WebSocketMessage(response) => props.onMessage(response).runNow
           }
         }
         socket.onclose = { (event: CloseEvent) =>
-          val cleanly = if(event.wasClean) "cleanly" else "uncleanly"
-          val msg = s"WebSocket connection closed $cleanly with code ${event.code}. reason: ${event.reason}"
+          val cleanly = if (event.wasClean) "cleanly" else "uncleanly"
+          val msg =
+            s"WebSocket connection closed $cleanly with code ${event.code}. reason: ${event.reason}"
           System.err.println(msg)
         }
       case Connected(_) =>
@@ -69,7 +78,8 @@ class WebsocketComponent[Request : Writer, Response : Reader] {
       props.render(s)
   }
 
-  val Websocket = ScalaComponent.builder[WebsocketProps]("Websocket")
+  val Websocket = ScalaComponent
+    .builder[WebsocketProps]("Websocket")
     .initialState(Connecting: WebsocketState)
     .renderBackend[WebsocketBackend]
     .componentDidMount(context => context.backend.connect(context.props))
