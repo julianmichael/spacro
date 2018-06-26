@@ -58,7 +58,7 @@ trait SpacroModule extends CrossScalaModule with PublishModule {
   // publish settings
 
   def artifactName = "spacro"
-  def publishVersion = "0.1.0-SNAPSHOT"
+  def publishVersion = "0.1.0"
   def pomSettings = PomSettings(
     description = artifactName(),
     organization = "org.julianmichael",

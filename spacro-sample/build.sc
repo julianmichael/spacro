@@ -4,9 +4,12 @@ import ammonite.ops._
 val thisScalaVersion = "2.11.12"
 val thisScalaJSVersion = "0.6.23"
 
+val spacroVersion = "0.1.0"
+
 val macroParadiseVersion = "2.1.0"
 
 val akkaActorVersion = "2.4.8"
+val logbackVersion = "1.2.3"
 
 val monocleVersion = "1.4.0"
 val upickleVersion = "0.4.3"
@@ -53,12 +56,13 @@ trait SpacroSampleModule extends ScalaModule {
     "-feature"
   )
 
-  def repositories = super.repositories ++ Seq(
-    coursier.maven.MavenRepository("https://oss.sonatype.org/content/repositories/snapshots")
-  )
+  // uncomment when depending on newer spacro snapshot
+  // def repositories = super.repositories ++ Seq(
+  //   coursier.maven.MavenRepository("https://oss.sonatype.org/content/repositories/snapshots")
+  // )
 
   def ivyDeps = Agg(
-    ivy"org.julianmichael::spacro::0.1.0-SNAPSHOT"
+    ivy"org.julianmichael::spacro::$spacroVersion"
   )
 
   def scalacPluginIvyDeps = super.scalacPluginIvyDeps() ++ Agg(
@@ -73,7 +77,7 @@ object sample extends Module {
 
     def ivyDeps = super.ivyDeps() ++ Agg(
       ivy"com.typesafe.akka::akka-actor:$akkaActorVersion",
-      ivy"ch.qos.logback:logback-classic:1.2.3"
+      ivy"ch.qos.logback:logback-classic:$logbackVersion"
     )
 
     def resources = T.sources(
