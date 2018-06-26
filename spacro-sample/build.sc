@@ -1,8 +1,8 @@
 import mill._, mill.scalalib._, mill.scalalib.publish._, mill.scalajslib._
 import ammonite.ops._
 
-val thisScalaVersion = "2.11.8"
-val thisScalaJSVersion = "0.6.19"
+val thisScalaVersion = "2.11.12"
+val thisScalaJSVersion = "0.6.23"
 
 val macroParadiseVersion = "2.1.0"
 
@@ -36,6 +36,8 @@ trait SimpleJSDeps extends Module {
 
 trait SpacroSampleModule extends ScalaModule {
 
+  def scalaVersion = thisScalaVersion
+
   def platformSegment: String
 
   def millSourcePath = build.millSourcePath / "sample"
@@ -45,20 +47,14 @@ trait SpacroSampleModule extends ScalaModule {
     millSourcePath / s"src-$platformSegment"
   )
 
-  def scalaVersion = thisScalaVersion
-
-  // typelevel scala
-  override def mapDependencies(d: coursier.Dependency) = {
-    val artifacts = Set("scala-library", "scala-compiler", "scala-reflect")
-    if(d.module.organization == "org.scala-lang" || artifacts(d.module.name)) {
-      d.copy(module = d.module.copy(organization = "org.typelevel"), version = thisScalaVersion)
-    } else d
-  }
-
   def scalacOptions = Seq(
     "-unchecked",
     "-deprecation",
     "-feature"
+  )
+
+  def repositories = super.repositories ++ Seq(
+    coursier.maven.MavenRepository("https://oss.sonatype.org/content/repositories/snapshots")
   )
 
   def ivyDeps = Agg(

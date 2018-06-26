@@ -45,10 +45,9 @@ class WebsocketComponent[Request : Writer, Response : Reader] {
               Callback(socket.send(write[HeartbeatingWebSocketMessage[Request]](WebSocketMessage(r)))
             ))).runNow
         }
-        socket.onerror = { (event: ErrorEvent) =>
-          val msg = s"Connection failure. Error code: ${event.colno}"
+        socket.onerror = { (event: Event) =>
+          val msg = s"Connection failure. Error: $event"
           System.err.println(msg)
-          // TODO maybe retry or something
         }
         socket.onmessage = { (event: MessageEvent) =>
           val msg = event.data.toString
@@ -57,10 +56,10 @@ class WebsocketComponent[Request : Writer, Response : Reader] {
             case WebSocketMessage(response) => props.onMessage(response).runNow
           }
         }
-        socket.onclose = { (event: Event) =>
-          val msg = s"Connection lost."
+        socket.onclose = { (event: CloseEvent) =>
+          val cleanly = if(event.wasClean) "cleanly" else "uncleanly"
+          val msg = s"WebSocket connection closed $cleanly with code ${event.code}. reason: ${event.reason}"
           System.err.println(msg)
-          // TODO maybe retry or something. probably not. right now this always happens because no heartbeat
         }
       case Connected(_) =>
         System.err.println("Already connected.")

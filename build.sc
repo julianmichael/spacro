@@ -1,51 +1,33 @@
 import mill._, mill.scalalib._, mill.scalalib.publish._, mill.scalajslib._
 import mill.util.Ctx
+import mill.define.Cross
 import coursier.maven.MavenRepository
 import ammonite.ops._
 
-val thisScalaVersion = "2.11.8"
-val thisScalaJSVersion = "0.6.19"
+val scalaVersions = List("2.11.12", "2.12.6")
+val thisScalaJSVersion = "0.6.23"
 
 val macroParadiseVersion = "2.1.0"
 
-val upickleVersion = "0.4.3"
+val upickleVersion = "0.4.4"
 val scalatagsVersion = "0.6.5"
 val monocleVersion = "1.4.0"
 
 val macmemoVersion = "0.4"
-val scalaXmlVersion = "1.0.2"
-val akkaActorVersion = "2.4.8"
+val scalaXmlVersion = "1.1.0"
+val akkaActorVersion = "2.4.20"
 val akkaHttpVersion = "10.0.10"
 val akkaHttpCorsVersion = "0.2.2"
 val scalaArmVersion = "2.0"
 val scalaLoggingVersion = "3.5.0"
 val awsJavaSdkVersion = "1.11.198"
 
-val scalajsDomVersion = "0.9.0"
-val scalajsJqueryVersion = "0.9.0"
+val scalajsDomVersion = "0.9.6"
+val scalajsJqueryVersion = "0.9.3"
 val scalajsReactVersion = "1.1.0"
 val scalajsScalaCSSVersion = "0.5.3"
 
-trait SimpleJSDeps extends Module {
-  def jsDeps = T { Agg.empty[String] }
-  def downloadedJSDeps = T {
-    for(url <- jsDeps()) yield {
-      val filename = url.substring(url.lastIndexOf("/") + 1)
-      %("curl", "-o", filename, url)(T.ctx().dest)
-      T.ctx().dest / filename
-    }
-  }
-  def aggregatedJSDeps = T {
-    val targetPath = T.ctx().dest / "jsdeps.js"
-    downloadedJSDeps().foreach { path =>
-      write.append(targetPath, read!(path))
-      write.append(targetPath, "\n")
-    }
-    targetPath
-  }
-}
-
-trait SpacroModule extends ScalaModule with PublishModule {
+trait SpacroModule extends CrossScalaModule with PublishModule {
 
   def platformSegment: String
 
@@ -55,16 +37,6 @@ trait SpacroModule extends ScalaModule with PublishModule {
     millSourcePath / "src",
     millSourcePath / s"src-$platformSegment"
   )
-
-  def scalaVersion = thisScalaVersion
-
-  // typelevel scala
-  override def mapDependencies = T.task { (d: coursier.Dependency) =>
-    val artifacts = Set("scala-library", "scala-compiler", "scala-reflect")
-    if(d.module.organization == "org.scala-lang" || artifacts(d.module.name)) {
-      d.copy(module = d.module.copy(organization = "org.typelevel"), version = scalaVersion())
-    } else d
-  }
 
   def scalacOptions = Seq(
     "-unchecked",
@@ -100,7 +72,8 @@ trait SpacroModule extends ScalaModule with PublishModule {
 }
 
 object spacro extends Module {
-  object jvm extends SpacroModule {
+  object jvm extends Cross[SpacroJvmModule](scalaVersions: _*)
+  class SpacroJvmModule(val crossScalaVersion: String) extends SpacroModule {
     def platformSegment = "jvm"
     def ivyDeps = super.ivyDeps() ++ Agg(
       ivy"com.softwaremill.macmemo::macros:$macmemoVersion",
@@ -113,7 +86,9 @@ object spacro extends Module {
       ivy"com.amazonaws:aws-java-sdk:$awsJavaSdkVersion"
     )
   }
-  object js extends SpacroModule with ScalaJSModule with SimpleJSDeps {
+
+  object js extends Cross[SpacroJsModule](scalaVersions: _*)
+  class SpacroJsModule(val crossScalaVersion: String) extends SpacroModule with ScalaJSModule {
     def scalaJSVersion = thisScalaJSVersion
     def platformSegment = "js"
 
@@ -125,12 +100,6 @@ object spacro extends Module {
       ivy"com.github.japgolly.scalajs-react::ext-cats::$scalajsReactVersion",
       ivy"com.github.japgolly.scalacss::core::$scalajsScalaCSSVersion",
       ivy"com.github.japgolly.scalacss::ext-react::$scalajsScalaCSSVersion"
-    )
-
-    def jsDeps = Agg(
-      "https://code.jquery.com/jquery-2.1.4.min.js",
-      "https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react.js",
-      "https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react-dom.js"
     )
   }
 }

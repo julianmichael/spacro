@@ -48,10 +48,9 @@ class WebsocketLoadableComponent[Request : Writer, Response : Reader] {
           scope.setState(Loading).runNow
           socket.send(write(WebSocketMessage(props.request)))
         }
-        socket.onerror = { (event: ErrorEvent) =>
-          val msg = s"Connection failure. Error code: ${event.colno}"
+        socket.onerror = { (event: Event) =>
+          val msg = s"Connection failure. Error: $event"
           System.err.println(msg)
-          // TODO maybe retry or something
         }
         socket.onmessage = { (event: MessageEvent) =>
           val msg = event.data.toString
@@ -71,10 +70,10 @@ class WebsocketLoadableComponent[Request : Writer, Response : Reader] {
             }.runNow
           }
         }
-        socket.onclose = { (event: Event) =>
-          val msg = s"Connection lost."
+        socket.onclose = { (event: CloseEvent) =>
+          val cleanly = if(event.wasClean) "cleanly" else "uncleanly"
+          val msg = s"WebSocket connection closed $cleanly with code ${event.code}. reason: ${event.reason}"
           System.err.println(msg)
-          // TODO maybe retry or something. probably not. right now this always happens because no heartbeat
         }
       case Loading =>
         System.err.println("Data already loading.")
