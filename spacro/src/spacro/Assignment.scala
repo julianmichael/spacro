@@ -32,3 +32,8 @@ case class Assignment[Response](
   response: Response,
   feedback: String
 )
+object Assignment {
+  import upickle.default._
+  implicit def reader[A: Reader] = macroR[Assignment[A]]
+  implicit def writer[A: Writer] = macroW[Assignment[A]]
+}

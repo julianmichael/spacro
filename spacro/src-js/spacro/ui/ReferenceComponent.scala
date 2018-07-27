@@ -24,12 +24,12 @@ class ReferenceComponent[A <: vdom.TopNode] {
 
   class ReferenceBackend(scope: BackendScope[ReferenceProps, ReferenceState]) {
 
-    var reference: A = _
+    val reference = Ref[A]
 
-    def setReference: Callback = scope.setState(Option(reference))
+    def setReference: Callback = scope.setState(scala.util.Try(reference.unsafeGet).toOption)
 
     def render(props: ReferenceProps, state: Option[A]) =
-      props.render(props.referencedTag.ref(reference = _), state)
+      props.render(props.referencedTag.withRef(reference), state)
   }
 
   val Reference = ScalaComponent

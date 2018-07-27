@@ -14,7 +14,9 @@ case class SpanImpl(override val begin: Int, override val end: Int) extends Span
 object Span {
   import upickle.default._
   implicit val contiguousSpanReadWriter: ReadWriter[Span] =
-  macroRW[SpanImpl] merge [SpanImpl, Span] macroRW[SpanImpl]
+    ReadWriter.merge[Span](
+      macroRW[SpanImpl]
+    )
   // spurious extra case just to get the types to work out ^
 
   def apply(x: Int, y: Int): Span = SpanImpl(math.min(x, y), math.max(x, y))

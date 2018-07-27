@@ -13,3 +13,8 @@ package spacro
   * @param creationTime the time (millis from epoch) that the HIT was created
   */
 case class HIT[Prompt](hitTypeId: String, hitId: String, prompt: Prompt, creationTime: Long)
+object HIT {
+  import upickle.default._
+  implicit def reader[A: Reader] = macroR[HIT[A]]
+  implicit def writer[A: Writer] = macroW[HIT[A]]
+}

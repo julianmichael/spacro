@@ -13,6 +13,9 @@ object Service {
       override def getReader(request: UnitRequest) = implicitly[Reader[Unit]]
       override def getWriter(request: UnitRequest) = implicitly[Writer[Unit]]
     }
+    import upickle.default._
+    implicit val reader = macroR[UnitRequest]
+    implicit val writer = macroW[UnitRequest]
   }
 
   val unitServer = new Service[UnitRequest] {

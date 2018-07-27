@@ -44,10 +44,12 @@ object Client extends TaskClient[SamplePrompt, SampleResponse, SampleAjaxRequest
     def load: Callback = Callback.future {
       makeAjaxRequest(SampleAjaxRequest(prompt)).map {
         case SampleAjaxResponse(sentence) =>
-          scope.modState {
-            case Loading          => Loaded(sentence, false)
-            case l @ Loaded(_, _) => System.err.println("Data already loaded."); l
-          }
+          scope.modState(
+            {
+              case Loading          => Loaded(sentence, false)
+              case l @ Loaded(_, _) => System.err.println("Data already loaded."); l
+            }: PartialFunction[State, State]
+          )
       }
     }
 

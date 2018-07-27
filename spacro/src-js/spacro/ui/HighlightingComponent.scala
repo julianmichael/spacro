@@ -59,18 +59,20 @@ class HighlightingComponent[Index] {
       } yield ()
 
     def touchElement(props: HighlightingProps)(index: Index): Callback =
-      scope.modState {
-        case s @ HighlightingState(span, status) =>
-          if (!props.isEnabled) s
-          else
-            props.preUpdate(
-              status match {
-                case DoNothing => s
-                case Highlight => HighlightingState(span + index, status)
-                case Erase     => HighlightingState(span - index, status)
-              }
-            )
-      } >> scope.props >>= (p => scope.state >>= p.update)
+      scope.modState(
+        {
+          case s @ HighlightingState(span, status) =>
+            if (!props.isEnabled) s
+            else
+              props.preUpdate(
+                status match {
+                  case DoNothing => s
+                  case Highlight => HighlightingState(span + index, status)
+                  case Erase     => HighlightingState(span - index, status)
+                }
+              )
+        }: PartialFunction[HighlightingState, HighlightingState]
+      ) >> scope.props >>= (p => scope.state >>= p.update)
 
     def setHighlightingStatus(s: HighlightingStatus): Callback =
       for {

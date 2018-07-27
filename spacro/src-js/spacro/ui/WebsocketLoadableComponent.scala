@@ -49,7 +49,7 @@ class WebsocketLoadableComponent[Request: Writer, Response: Reader] {
         val socket = new WebSocket(props.websocketURI)
         socket.onopen = { (event: Event) =>
           scope.setState(Loading).runNow
-          socket.send(write(WebSocketMessage(props.request)))
+          socket.send(write(WebSocketMessage(props.request): HeartbeatingWebSocketMessage[Request]))
         }
         socket.onerror = { (event: Event) =>
           val msg = s"Connection failure. Error: $event"
@@ -60,32 +60,34 @@ class WebsocketLoadableComponent[Request: Writer, Response: Reader] {
           read[HeartbeatingWebSocketMessage[Response]](msg) match {
             case Heartbeat => socket.send(msg)
             case WebSocketMessage(response) =>
-              scope.modState {
-                case Connecting =>
-                  System.err.println("Received message before socket opened?")
-                  props.onLoad(response).runNow
-                  Loaded(
-                    response,
-                    (r: Request) =>
+              scope.modState(
+                {
+                  case Connecting =>
+                    System.err.println("Received message before socket opened?")
+                    props.onLoad(response).runNow
+                    Loaded(
+                      response,
+                      (r: Request) =>
                       Callback(
                         socket
                           .send(write[HeartbeatingWebSocketMessage[Request]](WebSocketMessage(r)))
+                      )
                     )
-                  )
-                case Loading =>
-                  props.onLoad(response).runNow
-                  Loaded(
-                    response,
-                    (r: Request) =>
+                  case Loading =>
+                    props.onLoad(response).runNow
+                    Loaded(
+                      response,
+                      (r: Request) =>
                       Callback(
                         socket
                           .send(write[HeartbeatingWebSocketMessage[Request]](WebSocketMessage(r)))
+                      )
                     )
-                  )
-                case l @ Loaded(_, _) =>
-                  props.onMessage(response).runNow
-                  l
-              }.runNow
+                  case l @ Loaded(_, _) =>
+                    props.onMessage(response).runNow
+                    l
+                }: PartialFunction[WebsocketLoadableState, WebsocketLoadableState]
+              ).runNow
           }
         }
         socket.onclose = { (event: CloseEvent) =>

@@ -5,16 +5,20 @@ import mill.define.Cross
 import coursier.maven.MavenRepository
 import ammonite.ops._
 
-val thisPublishVersion = "0.1.1-SNAPSHOT"
+val thisPublishVersion = "0.2.0-SNAPSHOT"
 
 val scalaVersions = List("2.11.12", "2.12.6")
 val thisScalaJSVersion = "0.6.23"
 
 val macroParadiseVersion = "2.1.0"
 
-val upickleVersion = "0.4.4"
+// cats libs -- maintain versions matching up
+val monocleVersion = "1.5.1-cats"
+val scalajsReactVersion = "1.2.3"
+val scalajsScalaCSSVersion = "0.5.3"
+// TODO make things serialization-library-agnostic, remove react, monocle, etc.
+val upickleVersion = "0.5.1"
 val scalatagsVersion = "0.6.5"
-val monocleVersion = "1.4.0"
 
 val macmemoVersion = "0.4"
 val scalaXmlVersion = "1.1.0"
@@ -27,8 +31,6 @@ val awsJavaSdkVersion = "1.11.198"
 
 val scalajsDomVersion = "0.9.6"
 val scalajsJqueryVersion = "0.9.3"
-val scalajsReactVersion = "1.1.0"
-val scalajsScalaCSSVersion = "0.5.3"
 
 trait SpacroModule extends CrossScalaModule with PublishModule with ScalafmtModule {
 

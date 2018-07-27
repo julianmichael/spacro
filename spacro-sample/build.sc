@@ -5,19 +5,22 @@ import ammonite.ops._
 val thisScalaVersion = "2.11.12"
 val thisScalaJSVersion = "0.6.23"
 
-val spacroVersion = "0.1.0"
+val spacroVersion = "0.2.0-SNAPSHOT"
 
 val macroParadiseVersion = "2.1.0"
+
+// cats libs -- maintain versions matching up
+val scalajsReactVersion = "1.2.3"
+val scalajsScalaCSSVersion = "0.5.3"
+val monocleVersion = "1.5.1-cats"
+
+val upickleVersion = "0.4.4"
 
 val akkaActorVersion = "2.4.8"
 val logbackVersion = "1.2.3"
 
-val monocleVersion = "1.4.0"
-val upickleVersion = "0.4.3"
 val scalajsDomVersion = "0.9.0"
 val scalajsJqueryVersion = "0.9.0"
-val scalajsReactVersion = "1.1.0"
-val scalajsScalaCSSVersion = "0.5.3"
 
 trait SimpleJSDeps extends Module {
   def jsDeps = T { Agg.empty[String] }

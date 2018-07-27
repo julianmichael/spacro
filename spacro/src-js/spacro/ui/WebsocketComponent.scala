@@ -16,8 +16,6 @@ import japgolly.scalajs.react._
 import scalacss.DevDefaults._
 import scalacss.ScalaCssReact._
 
-import upickle.default._
-
 import monocle._
 import monocle.macros._
 import japgolly.scalajs.react.MonocleReact._
