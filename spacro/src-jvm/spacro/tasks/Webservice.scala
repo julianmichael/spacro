@@ -26,7 +26,8 @@ import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
 
-import upickle.default._
+import io.circe.{Encoder, Decoder}
+import io.circe.syntax._
 
 import com.typesafe.scalalogging.StrictLogging
 
@@ -39,6 +40,9 @@ import com.typesafe.scalalogging.StrictLogging
 class Webservice(tasks: List[TaskSpecification])(implicit fm: Materializer, config: TaskConfig)
     extends Directives
     with StrictLogging {
+
+  private[this] val printer = io.circe.Printer.noSpaces
+  import io.circe.parser._
 
   // assume keys are unique
   val taskIndex = tasks.map(t => (t.taskKey -> t)).toMap
@@ -85,11 +89,11 @@ class Webservice(tasks: List[TaskSpecification])(implicit fm: Materializer, conf
               complete {
                 taskSpecOpt.flatMap { taskSpec =>
                   scala.util.Try {
-                    import taskSpec.ajaxRequestReader
-                    val request = read[taskSpec.AjaxRequest](e)
-                    val responseWriter = taskSpec.ajaxResponseWriter.getWriter(request)
+                    import taskSpec.ajaxRequestDecoder
+                    val request = decode[taskSpec.AjaxRequest](e).right.get
+                    val responseEncoder = taskSpec.ajaxResponseEncoder.getEncoder(request)
                     val response = taskSpec.ajaxService.processRequest(request)
-                    HttpEntity(ContentTypes.`text/html(UTF-8)`, write(response)(responseWriter))
+                    HttpEntity(ContentTypes.`text/html(UTF-8)`, printer.pretty(response.asJson(responseEncoder)))
                   }.toOption
                 }
               }
@@ -106,7 +110,7 @@ class Webservice(tasks: List[TaskSpecification])(implicit fm: Materializer, conf
     Flow[Message]
       .map {
         case TextMessage.Strict(msg) =>
-          Future.successful(List(read[HeartbeatingWebSocketMessage[WebsocketRequest]](msg)))
+          Future.successful(List(decode[HeartbeatingWebSocketMessage[WebsocketRequest]](msg).right.get))
         case TextMessage.Streamed(stream) =>
           stream // necessary to handle large messages
             .limit(10000) // Max frames we are willing to wait for
@@ -114,7 +118,7 @@ class Webservice(tasks: List[TaskSpecification])(implicit fm: Materializer, conf
             .runFold("")(_ + _) // Merges the frames
             .flatMap(
               msg =>
-                Future.successful(List(read[HeartbeatingWebSocketMessage[WebsocketRequest]](msg)))
+                Future.successful(List(decode[HeartbeatingWebSocketMessage[WebsocketRequest]](msg).right.get))
             )
         case bm: BinaryMessage =>
           // ignore binary messages but drain content to avoid the stream being clogged
@@ -129,7 +133,7 @@ class Webservice(tasks: List[TaskSpecification])(implicit fm: Materializer, conf
       .keepAlive(30 seconds, () => Heartbeat) // send heartbeat every 30 seconds to keep connection alive
       .map(
         message =>
-          TextMessage.Strict(write[HeartbeatingWebSocketMessage[WebsocketResponse]]((message)))
+          TextMessage.Strict(printer.pretty(message.asJson))
       )
   }
 }

@@ -16,7 +16,8 @@ import scala.language.postfixOps
 import akka.actor.Actor
 import akka.actor.ActorRef
 
-import upickle.default._
+import io.circe.{Encoder, Decoder}
+import io.circe.syntax._
 
 import com.typesafe.scalalogging.StrictLogging
 
@@ -59,15 +60,17 @@ object HITManager {
     * keeps track of HITs and assignments that are active, saved, etc.
     * and gives convenience methods for interfacing with Turk. */
   class Helper[P, R](val taskSpec: TaskSpecification { type Prompt = P; type Response = R })(
-    implicit val promptReader: Reader[P],
-    val responseReader: Reader[R],
-    val responseWriter: Writer[R],
+    implicit val promptDecoder: Decoder[P],
+    val responseDecoder: Decoder[R],
+    val responseEncoder: Encoder[R],
     val config: TaskConfig
   ) extends StrictLogging {
     private type Prompt = P
     private type Response = R
 
     import scala.collection.mutable
+
+    private[this] val printer = io.circe.Printer.noSpaces
 
     object Message {
       sealed trait Message
@@ -279,7 +282,7 @@ object HITManager {
             )
             config.hitDataService.saveApprovedAssignment(assignment).recover {
               case e =>
-                logger.error(s"Failed to save approved assignment; data:\n${write(assignment)}")
+                logger.error(s"Failed to save approved assignment; data:\n${printer.pretty(assignment.asJson)}")
             }
           }
         case Rejection(message) =>
@@ -297,7 +300,7 @@ object HITManager {
             )
             config.hitDataService.saveRejectedAssignment(assignment) recover {
               case e =>
-                logger.error(s"Failed to save approved assignment; data:\n${write(assignment)}")
+                logger.error(s"Failed to save approved assignment; data:\n${printer.pretty(assignment.asJson)}")
             }
           }
       }

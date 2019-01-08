@@ -2,13 +2,17 @@ package spacro.tasks
 
 import scalatags.Text.all._
 import scalatags.Text.TypedTag
-import upickle.default._
+
+import io.circe.Encoder
+import io.circe.syntax._
 
 /** Contains the general HTML template for all tasks. */
 object TaskPage {
 
+  private[this] val printer = io.circe.Printer.noSpaces
+
   /** Constructs the HTML page for a given prompt and a given task. */
-  def htmlPage[Prompt: Writer](
+  def htmlPage[Prompt: Encoder](
     prompt: Prompt,
     taskSpec: TaskSpecification,
     useHttps: Boolean = true,
@@ -56,31 +60,31 @@ object TaskPage {
       body()(
         input(
           `type` := "hidden",
-          value := write(prompt),
+          value := printer.pretty(prompt.asJson),
           name := FieldLabels.promptLabel,
           id := FieldLabels.promptLabel
         ),
         input(
           `type` := "hidden",
-          value := write(serverDomain),
+          value := printer.pretty(serverDomain.asJson),
           name := FieldLabels.serverDomainLabel,
           id := FieldLabels.serverDomainLabel
         ),
         input(
           `type` := "hidden",
-          value := write(config.httpPort),
+          value := printer.pretty(config.httpPort.asJson),
           name := FieldLabels.httpPortLabel,
           id := FieldLabels.httpPortLabel
         ),
         input(
           `type` := "hidden",
-          value := write(config.httpsPort),
+          value := printer.pretty(config.httpsPort.asJson),
           name := FieldLabels.httpsPortLabel,
           id := FieldLabels.httpsPortLabel
         ),
         input(
           `type` := "hidden",
-          value := write(taskSpec.taskKey),
+          value := printer.pretty(taskSpec.taskKey.asJson),
           name := FieldLabels.taskKeyLabel,
           id := FieldLabels.taskKeyLabel
         ),
@@ -95,7 +99,7 @@ object TaskPage {
           // where our client code should put the response
           input(
             `type` := "hidden",
-            value := "",
+            value := "", // TODO printer.pretty((None: Option[Response]).asJson)
             name := FieldLabels.responseLabel,
             id := FieldLabels.responseLabel
           ),

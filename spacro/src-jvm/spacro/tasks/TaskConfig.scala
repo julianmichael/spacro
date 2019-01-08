@@ -10,8 +10,6 @@ import com.amazonaws.services.mturk.AmazonMTurkClientBuilder
 import com.amazonaws.regions.Regions
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 
-import upickle.default._
-
 /** Contains the global configuration of our usage of the MTurk API,
   * including relevant values (URLs, API hooks) and whether we are running
   * on production or in the sandbox.

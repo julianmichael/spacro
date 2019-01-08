@@ -8,21 +8,22 @@ import scala.util.Try
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-import upickle.default.Writer
-import upickle.default.Reader
-import upickle.default.write
-import upickle.default.read
-
 import resource.managed
 import resource.ManagedResource
 
 import com.typesafe.scalalogging.StrictLogging
+
+import io.circe.{Encoder, Decoder}
+import io.circe.syntax._
 
 /** Implementation of HITDataService against the file system.
   * Works for most purposes; would be better to have an implementation against a database
   * for a really big project.
   */
 class FileSystemHITDataService(root: Path) extends HITDataService with StrictLogging {
+
+  private[this] val printer = io.circe.Printer.noSpaces
+  import io.circe.parser._
 
   // == Basic auxiliary methods ==
 
@@ -31,10 +32,10 @@ class FileSystemHITDataService(root: Path) extends HITDataService with StrictLog
     managed(Files.lines(path)).map(_.iterator.asScala)
   }
 
-  private[this] def loadSerialized[A: Reader](path: Path): Try[A] = {
+  private[this] def loadSerialized[A: Decoder](path: Path): Try[A] = {
     val res = for {
       lines <- loadFile(path)
-    } yield Try(read[A](lines.mkString("\n")))
+    } yield Try(decode[A](lines.mkString("\n")).right.get)
     res.tried.flatten
   }
 
@@ -89,9 +90,9 @@ class FileSystemHITDataService(root: Path) extends HITDataService with StrictLog
 
   // == Saving / loading specific kinds of files ==
 
-  override def saveHIT[Prompt: Writer](hit: HIT[Prompt]): Try[Unit] = {
+  override def saveHIT[Prompt: Encoder](hit: HIT[Prompt]): Try[Unit] = {
     val savePath = getHITPath(hit.hitTypeId, hit.hitId).resolve(hitFilename)
-    saveFile(savePath, write(hit))
+    saveFile(savePath, printer.pretty(hit.asJson))
   }
 
   import com.softwaremill.macmemo.memoize
@@ -99,30 +100,30 @@ class FileSystemHITDataService(root: Path) extends HITDataService with StrictLog
   private[this] implicit val cacheProvider = MemoCacheBuilder.guavaMemoCacheBuilder
 
   @memoize(maxSize = 500, expiresAfter = 12 hours)
-  private[this] def loadHITUnsafe[Prompt: Reader](path: Path): HIT[Prompt] =
+  private[this] def loadHITUnsafe[Prompt: Decoder](path: Path): HIT[Prompt] =
     loadSerialized[HIT[Prompt]](path.resolve(hitFilename)).get
 
-  override def getHIT[Prompt: Reader](hitTypeId: String, hitId: String): Try[HIT[Prompt]] =
+  override def getHIT[Prompt: Decoder](hitTypeId: String, hitId: String): Try[HIT[Prompt]] =
     if (hitExists(hitTypeId, hitId)) Try(loadHITUnsafe(getHITPath(hitTypeId, hitId)))
     else scala.util.Failure(new RuntimeException(s"HIT ($hitTypeId; $hitId) does not exist"))
 
-  override def saveApprovedAssignment[Response: Writer](
+  override def saveApprovedAssignment[Response: Encoder](
     assignment: Assignment[Response]
   ): Try[Unit] = Try {
     val directory = getHITPath(assignment.hitTypeId, assignment.hitId)
     val savePath = directory.resolve(s"${assignment.assignmentId}.txt")
-    saveFile(savePath, write(assignment))
+    saveFile(savePath, printer.pretty(assignment.asJson))
   }
 
-  override def saveRejectedAssignment[Response: Writer](
+  override def saveRejectedAssignment[Response: Encoder](
     assignment: Assignment[Response]
   ): Try[Unit] = Try {
     val directory = getRejectionPath(assignment.hitTypeId, assignment.hitId)
     val savePath = directory.resolve(s"${assignment.assignmentId}.txt")
-    saveFile(savePath, write(assignment))
+    saveFile(savePath, printer.pretty(assignment.asJson))
   }
 
-  override def getHITInfo[Prompt: Reader, Response: Reader](
+  override def getHITInfo[Prompt: Decoder, Response: Decoder](
     hitTypeId: String,
     hitId: String
   ): Try[HITInfo[Prompt, Response]] =
@@ -131,7 +132,7 @@ class FileSystemHITDataService(root: Path) extends HITDataService with StrictLog
       assignments <- getAssignmentsForHIT[Response](hitTypeId, hitId)
     } yield HITInfo(hit, assignments)
 
-  override def getAllHITInfo[Prompt: Reader, Response: Reader](
+  override def getAllHITInfo[Prompt: Decoder, Response: Decoder](
     hitTypeId: String
   ): Try[List[HITInfo[Prompt, Response]]] = Try {
     val allData = for {
@@ -145,7 +146,7 @@ class FileSystemHITDataService(root: Path) extends HITDataService with StrictLog
     allData.toList
   }
 
-  override def getAssignmentsForHIT[Response: Reader](
+  override def getAssignmentsForHIT[Response: Decoder](
     hitTypeId: String,
     hitId: String
   ): Try[List[Assignment[Response]]] = Try {

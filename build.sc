@@ -13,7 +13,8 @@ val thisScalaJSVersion = "0.6.23"
 val macroParadiseVersion = "2.1.0"
 
 // TODO make things serialization-library-agnostic, or switch to circe
-val upickleVersion = "0.5.1"
+val circeVersion = "0.10.0"
+// val upickleVersion = "0.5.1"
 val scalatagsVersion = "0.6.5"
 
 val macmemoVersion = "0.4"
@@ -46,7 +47,9 @@ trait SpacroModule extends CrossScalaModule with PublishModule with ScalafmtModu
   )
 
   def ivyDeps = Agg(
-    ivy"com.lihaoyi::upickle::$upickleVersion",
+    ivy"io.circe::circe-core::$circeVersion",
+    ivy"io.circe::circe-generic::$circeVersion",
+    ivy"io.circe::circe-parser::$circeVersion",
     ivy"com.lihaoyi::scalatags::$scalatagsVersion",
   )
 

@@ -3,8 +3,6 @@ package spacro.tasks
 import scalajs.js
 import org.scalajs.jquery.jQuery
 
-import upickle.default._
-
 /** Trait to be inherited by the main class for the JS client.
   * Dispatches to the appropriate task's client code using the defined
   * mapping from task keys to main methods.
@@ -15,9 +13,10 @@ trait TaskDispatcher {
   def taskMapping: Map[String, () => Unit]
 
   import scala.scalajs.js.Dynamic.global
+  import io.circe.parser._
 
   lazy val taskKey: String = {
-    read[String](jQuery(s"#${FieldLabels.taskKeyLabel}").attr("value").get)
+    decode[String](jQuery(s"#${FieldLabels.taskKeyLabel}").attr("value").get).right.get
   }
 
   final def main(args: Array[String]): Unit = jQuery { () =>

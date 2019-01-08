@@ -6,8 +6,6 @@ import spacro.util._
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
-import upickle.default.Reader
-
 import akka.actor.ActorRef
 
 import com.amazonaws.services.mturk.model.AssignmentStatus
@@ -63,7 +61,7 @@ class NumAssignmentsHITManager[Prompt, Response](
 
   import helper.config
   import helper.taskSpec.hitTypeId
-  import helper.promptReader
+  import helper.promptDecoder
 
   // override for more interesting review policy
   def reviewAssignment(hit: HIT[Prompt], assignment: Assignment[Response]): Unit = {

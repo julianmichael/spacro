@@ -24,7 +24,7 @@ import akka.stream.scaladsl.Flow
 
 import scalatags.Text.TypedTag
 
-import upickle.default._
+import io.circe.{Encoder, Decoder}
 
 /** Specifies a kind of task to run on MTurk.
   *
@@ -50,20 +50,20 @@ sealed trait TaskSpecification {
   implicit val config: TaskConfig
 
   type Prompt
-  implicit val promptWriter: Writer[Prompt]
+  implicit val promptEncoder: Encoder[Prompt]
   type Response
-  implicit val responseReader: Reader[Response]
+  implicit val responseDecoder: Decoder[Response]
 
   // general message request/response types because messages can be freely passed between client/server
   type WebsocketRequest
-  implicit val websocketRequestReader: Reader[WebsocketRequest]
+  implicit val websocketRequestDecoder: Decoder[WebsocketRequest]
   type WebsocketResponse
-  implicit val websocketResponseWriter: Writer[WebsocketResponse]
+  implicit val websocketResponseEncoder: Encoder[WebsocketResponse]
 
   // response type depends on request type because each response is specific to a request
   type AjaxRequest <: { type Response }
-  implicit val ajaxRequestReader: Reader[AjaxRequest]
-  implicit val ajaxResponseWriter: ResponseWriter[AjaxRequest]
+  implicit val ajaxRequestDecoder: Decoder[AjaxRequest]
+  implicit val ajaxResponseEncoder: ResponseEncoder[AjaxRequest]
 
   val samplePrompts: Vector[Prompt]
 
@@ -73,6 +73,9 @@ sealed trait TaskSpecification {
   val frozenHITTypeId: Option[String]
   val taskPageHeadElements: List[TypedTag[String]]
   val taskPageBodyElements: List[TypedTag[String]]
+
+  private[this] val printer = io.circe.Printer.noSpaces
+  import io.circe.parser._
 
   /** The HIT Type ID for this task.
     *
@@ -104,11 +107,7 @@ sealed trait TaskSpecification {
     * If the HIT is successfully created, saves the HIT to disk and returns it.
     * Otherwise returns a Failure with the error.
     *
-    * Saving the HIT requires a serializer for it; for this reason,
-    * the method needs a upickle serializer for the Prompt type.
-    *
     * @param prompt the data from which to generate the question for the HIT
-    * @param w a upickle serializer for Prompt
     * @return the created HIT, wrapped in a Try in case of error
     */
   final def createHIT(
@@ -156,7 +155,7 @@ sealed trait TaskSpecification {
     * @return the well-typed data representation of an annotator response
     */
   final def extractResponse(answerXML: String): Response =
-    read[Response](getAnswers(answerXML)(FieldLabels.responseLabel))
+    decode[Response](getAnswers(answerXML)(FieldLabels.responseLabel)).right.get
 
   /** Extracts the annotator's feedback from an answer XML string.
     *
@@ -245,8 +244,8 @@ object TaskSpecification {
       taskPageHeadElements: List[TypedTag[String]] = Nil,
       taskPageBodyElements: List[TypedTag[String]] = Nil
     )(
-      implicit promptWriter: Writer[P],
-      responseReader: Reader[R],
+      implicit promptEncoder: Encoder[P],
+      responseDecoder: Decoder[R],
       config: TaskConfig
     ): NoApi {
       type Prompt = P; type Response = R;
@@ -278,10 +277,10 @@ object TaskSpecification {
       taskPageHeadElements: List[TypedTag[String]] = Nil,
       taskPageBodyElements: List[TypedTag[String]] = Nil
     )(
-      implicit promptWriter: Writer[P],
-      responseReader: Reader[R],
-      ajaxRequestReader: Reader[AjaxReq],
-      ajaxResponseWriter: ResponseWriter[AjaxReq],
+      implicit promptEncoder: Encoder[P],
+      responseDecoder: Decoder[R],
+      ajaxRequestDecoder: Decoder[AjaxReq],
+      ajaxResponseEncoder: ResponseEncoder[AjaxReq],
       config: TaskConfig
     ): NoWebsockets {
       type Prompt = P; type Response = R;
@@ -312,10 +311,10 @@ object TaskSpecification {
       taskPageHeadElements: List[TypedTag[String]] = Nil,
       taskPageBodyElements: List[TypedTag[String]] = Nil
     )(
-      implicit promptWriter: Writer[P],
-      responseReader: Reader[R],
-      websocketRequestReader: Reader[WebsocketReq],
-      websocketResponseWriter: Writer[WebsocketResp],
+      implicit promptEncoder: Encoder[P],
+      responseDecoder: Decoder[R],
+      websocketRequestDecoder: Decoder[WebsocketReq],
+      websocketResponseEncoder: Encoder[WebsocketResp],
       config: TaskConfig
     ): NoAjax {
       type Prompt = P; type Response = R;
@@ -349,12 +348,12 @@ object TaskSpecification {
     override val taskPageHeadElements: List[TypedTag[String]],
     override val taskPageBodyElements: List[TypedTag[String]]
   )(
-    implicit override val promptWriter: Writer[P],
-    override val responseReader: Reader[R],
-    override val websocketRequestReader: Reader[WebsocketReq],
-    override val websocketResponseWriter: Writer[WebsocketResp],
-    override val ajaxRequestReader: Reader[AjaxReq],
-    override val ajaxResponseWriter: ResponseWriter[AjaxReq],
+    implicit override val promptEncoder: Encoder[P],
+    override val responseDecoder: Decoder[R],
+    override val websocketRequestDecoder: Decoder[WebsocketReq],
+    override val websocketResponseEncoder: Encoder[WebsocketResp],
+    override val ajaxRequestDecoder: Decoder[AjaxReq],
+    override val ajaxResponseEncoder: ResponseEncoder[AjaxReq],
     override val config: TaskConfig
   ) extends TaskSpecification {
 
@@ -375,12 +374,12 @@ object TaskSpecification {
     taskPageHeadElements: List[TypedTag[String]] = Nil,
     taskPageBodyElements: List[TypedTag[String]] = Nil
   )(
-    implicit promptWriter: Writer[P],
-    responseReader: Reader[R],
-    websocketRequestReader: Reader[WebsocketReq],
-    websocketResponseWriter: Writer[WebsocketResp],
-    ajaxRequestReader: Reader[AjaxReq],
-    ajaxResponseWriter: ResponseWriter[AjaxReq],
+    implicit promptEncoder: Encoder[P],
+    responseDecoder: Decoder[R],
+    websocketRequestDecoder: Decoder[WebsocketReq],
+    websocketResponseEncoder: Encoder[WebsocketResp],
+    ajaxRequestDecoder: Decoder[AjaxReq],
+    ajaxResponseEncoder: ResponseEncoder[AjaxReq],
     config: TaskConfig
   ): TaskSpecification {
     type Prompt = P; type Response = R;

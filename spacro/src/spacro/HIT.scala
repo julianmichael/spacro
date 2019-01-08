@@ -1,5 +1,7 @@
 package spacro
 
+import io.circe.{Encoder, Decoder}
+
 /** Represents a HIT that has already been uploaded to MTurk.
   * It may not still be on MTurk, but it should still be saved to disk.
   *
@@ -14,7 +16,7 @@ package spacro
   */
 case class HIT[Prompt](hitTypeId: String, hitId: String, prompt: Prompt, creationTime: Long)
 object HIT {
-  import upickle.default._
-  implicit def reader[A: Reader] = macroR[HIT[A]]
-  implicit def writer[A: Writer] = macroW[HIT[A]]
+  import io.circe.generic.semiauto._
+  implicit def hitDecoder[A: Decoder] = deriveDecoder[HIT[A]]
+  implicit def hitEncoder[A: Encoder] = deriveEncoder[HIT[A]]
 }

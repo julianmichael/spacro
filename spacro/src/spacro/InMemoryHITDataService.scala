@@ -2,7 +2,8 @@ package spacro
 
 import scala.util.Try
 
-import upickle.default._
+import io.circe.{Encoder, Decoder}
+import io.circe.syntax._
 
 import collection.mutable
 
@@ -10,24 +11,27 @@ import collection.mutable
 /** Simple in-memory implementation of HITDataService for use in testing and sample tasks. */
 class InMemoryHITDataService extends HITDataService {
 
+  private[this] val printer = io.circe.Printer.noSpaces
+  import io.circe.parser._
+
   case class HITStore(
     hit: HIT[String],
     approved: List[Assignment[String]],
     rejected: List[Assignment[String]]
   ) {
 
-    def approve[Response: Writer](assignment: Assignment[Response]) =
-      this.copy(approved = assignment.copy(response = write(assignment.response)) :: this.approved)
+    def approve[Response: Encoder](assignment: Assignment[Response]) =
+      this.copy(approved = assignment.copy(response = printer.pretty(assignment.response.asJson)) :: this.approved)
 
-    def reject[Response: Writer](assignment: Assignment[Response]) =
-      this.copy(rejected = assignment.copy(response = write(assignment.response)) :: this.rejected)
+    def reject[Response: Encoder](assignment: Assignment[Response]) =
+      this.copy(rejected = assignment.copy(response = printer.pretty(assignment.response.asJson)) :: this.rejected)
     def hitInfo = HITInfo(hit, approved)
   }
 
   object HITStore {
 
-    def fromHIT[Prompt: Writer](hit: HIT[Prompt]) =
-      HITStore(hit.copy(prompt = write(hit.prompt)), Nil, Nil)
+    def fromHIT[Prompt: Encoder](hit: HIT[Prompt]) =
+      HITStore(hit.copy(prompt = printer.pretty(hit.prompt.asJson)), Nil, Nil)
   }
 
   private[this] val data = mutable.Map.empty[
@@ -46,36 +50,36 @@ class InMemoryHITDataService extends HITDataService {
       stores
   }
 
-  private[this] def deserializeHIT[Prompt: Reader](hit: HIT[String]): HIT[Prompt] =
-    hit.copy(prompt = read[Prompt](hit.prompt))
+  private[this] def deserializeHIT[Prompt: Decoder](hit: HIT[String]): HIT[Prompt] =
+    hit.copy(prompt = decode[Prompt](hit.prompt).right.get)
 
-  private[this] def deserializeAssignment[Response: Reader](
+  private[this] def deserializeAssignment[Response: Decoder](
     assignment: Assignment[String]
   ): Assignment[Response] =
-    assignment.copy(response = read[Response](assignment.response))
+    assignment.copy(response = decode[Response](assignment.response).right.get)
 
-  private[this] def deserializeHITInfo[Prompt: Reader, Response: Reader](
+  private[this] def deserializeHITInfo[Prompt: Decoder, Response: Decoder](
     hi: HITInfo[String, String]
   ): HITInfo[Prompt, Response] = hi.copy(
     hit = deserializeHIT[Prompt](hi.hit),
     assignments = hi.assignments.map(deserializeAssignment[Response](_))
   )
 
-  override def saveHIT[Prompt: Writer](
+  override def saveHIT[Prompt: Encoder](
     hit: HIT[Prompt]
   ): Try[Unit] = Try {
     val hitStores = getStoresForHITType(hit.hitTypeId)
     hitStores.put(hit.hitId, HITStore.fromHIT(hit))
   }
 
-  override def getHIT[Prompt: Reader](
+  override def getHIT[Prompt: Decoder](
     hitTypeId: String,
     hitId: String
   ): Try[HIT[Prompt]] = Try {
     deserializeHIT(getStoresForHITType(hitTypeId)(hitId).hit)
   }
 
-  override def saveApprovedAssignment[Response: Writer](
+  override def saveApprovedAssignment[Response: Encoder](
     assignment: Assignment[Response]
   ): Try[Unit] = Try {
     val hitStores = getStoresForHITType(assignment.hitTypeId)
@@ -83,7 +87,7 @@ class InMemoryHITDataService extends HITDataService {
     hitStores.put(assignment.hitId, hitStore.approve(assignment))
   }
 
-  override def saveRejectedAssignment[Response: Writer](
+  override def saveRejectedAssignment[Response: Encoder](
     assignment: Assignment[Response]
   ): Try[Unit] = Try {
     val hitStores = getStoresForHITType(assignment.hitTypeId)
@@ -91,14 +95,14 @@ class InMemoryHITDataService extends HITDataService {
     hitStores.put(assignment.hitId, hitStore.reject(assignment))
   }
 
-  override def getHITInfo[Prompt: Reader, Response: Reader](
+  override def getHITInfo[Prompt: Decoder, Response: Decoder](
     hitTypeId: String,
     hitId: String
   ): Try[HITInfo[Prompt, Response]] = Try {
     deserializeHITInfo(getStoresForHITType(hitTypeId)(hitId).hitInfo)
   }
 
-  override def getAllHITInfo[Prompt: Reader, Response: Reader](
+  override def getAllHITInfo[Prompt: Decoder, Response: Decoder](
     hitTypeId: String
   ): Try[List[HITInfo[Prompt, Response]]] = Try {
     getStoresForHITType(hitTypeId).values.toList
@@ -106,7 +110,7 @@ class InMemoryHITDataService extends HITDataService {
       .map(deserializeHITInfo[Prompt, Response](_))
   }
 
-  override def getAssignmentsForHIT[Response: Reader](
+  override def getAssignmentsForHIT[Response: Decoder](
     hitTypeId: String,
     hitId: String
   ): Try[List[Assignment[Response]]] = Try {

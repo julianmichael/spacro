@@ -1,5 +1,7 @@
 package spacro
 
+import io.circe.{Encoder, Decoder}
+
 /** Represents a single annotator's response to a HIT.
   *
   * Similar to the "Assignment" type from the MTurk API,
@@ -33,7 +35,7 @@ case class Assignment[Response](
   feedback: String
 )
 object Assignment {
-  import upickle.default._
-  implicit def reader[A: Reader] = macroR[Assignment[A]]
-  implicit def writer[A: Writer] = macroW[Assignment[A]]
+  import io.circe.generic.semiauto._
+  implicit def assignmentDecoder[A: Decoder] = deriveDecoder[Assignment[A]]
+  implicit def assignmentEncoder[A: Encoder] = deriveEncoder[Assignment[A]]
 }

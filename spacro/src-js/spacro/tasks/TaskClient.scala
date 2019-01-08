@@ -2,22 +2,25 @@ package spacro.tasks
 
 import scalajs.js
 import scalajs.js.JSApp
+
 import org.scalajs.jquery.jQuery
 import org.scalajs.dom
 
 import scala.concurrent.Future
 
-import upickle.default._
+import io.circe.{Encoder, Decoder}
+import io.circe.syntax._
 
 /** Superclass for an implementation of a client/interface for a turk task.
   * Gives access by field to all of the information written into the `TaskPage` on the server.
   */
 abstract class TaskClient[
-  Prompt: Reader,
-  Response: Writer,
-  AjaxRequest <: { type Response }: Writer: ResponseReader
+  Prompt: Decoder,
+  Response: Encoder,
+  AjaxRequest <: { type Response } : Encoder : ResponseDecoder
 ] {
   import scala.scalajs.js.Dynamic.global
+  import io.circe.parser._
 
   lazy val assignmentIdOpt: Option[String] = {
     global.turkSetAssignmentID()
@@ -34,19 +37,19 @@ abstract class TaskClient[
   import FieldLabels._
 
   lazy val taskKey: String = {
-    read[String](jQuery(s"#$taskKeyLabel").attr("value").get)
+    decode[String](jQuery(s"#$taskKeyLabel").attr("value").get).right.get
   }
 
   lazy val serverDomain: String = {
-    read[String](jQuery(s"#$serverDomainLabel").attr("value").get)
+    decode[String](jQuery(s"#$serverDomainLabel").attr("value").get).right.get
   }
 
   lazy val httpPort: Int = {
-    read[Int](jQuery(s"#$httpPortLabel").attr("value").get)
+    decode[Int](jQuery(s"#$httpPortLabel").attr("value").get).right.get
   }
 
   lazy val httpsPort: Int = {
-    read[Int](jQuery(s"#$httpsPortLabel").attr("value").get)
+    decode[Int](jQuery(s"#$httpsPortLabel").attr("value").get).right.get
   }
 
   lazy val ajaxUri = {
@@ -56,16 +59,18 @@ abstract class TaskClient[
     s"$ajaxHttpProtocol://$serverDomain:$serverPort/task/$taskKey/ajax"
   }
 
+  private[this] val printer = io.circe.Printer.noSpaces
+  import io.circe.syntax._
+
   def makeAjaxRequest(request: AjaxRequest): Future[request.Response] = {
     import scala.concurrent.ExecutionContext.Implicits.global
     dom.ext.Ajax
-      .post(url = ajaxUri, data = write(request))
-      .map(
-        response =>
-          read[request.Response](response.responseText)(
-            implicitly[ResponseReader[AjaxRequest]].getReader(request)
-        )
-      )
+      .post(url = ajaxUri, data = printer.pretty(request.asJson))
+      .map { response =>
+        decode[request.Response](response.responseText)(
+          implicitly[ResponseDecoder[AjaxRequest]].getDecoder(request)
+        ).right.get
+      }
   }
 
   lazy val websocketUri: String = {
@@ -76,7 +81,7 @@ abstract class TaskClient[
   }
 
   lazy val prompt: Prompt = {
-    read[Prompt](jQuery(s"#$promptLabel").attr("value").get)
+    decode[Prompt](jQuery(s"#$promptLabel").attr("value").get).right.get
   }
 
   lazy val externalSubmitURL: String = {
@@ -84,7 +89,7 @@ abstract class TaskClient[
   }
 
   def setResponse(response: Response): Unit = {
-    jQuery(s"#$responseLabel").attr("value", write(response))
+    jQuery(s"#$responseLabel").attr("value", printer.pretty(response.asJson))
   }
 
   def main(): Unit

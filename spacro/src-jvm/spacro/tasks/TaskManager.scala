@@ -11,9 +11,6 @@ import akka.actor.Actor
 import akka.actor.ActorRef
 import akka.actor.Cancellable
 
-import upickle.default.Writer
-import upickle.default.Reader
-
 import com.typesafe.scalalogging.StrictLogging
 
 /** Actor that behaves as an endpoint for interfacing with the task through the SBT console.
