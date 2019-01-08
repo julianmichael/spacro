@@ -5,18 +5,14 @@ import mill.define.Cross
 import coursier.maven.MavenRepository
 import ammonite.ops._
 
-val thisPublishVersion = "0.2.1-SNAPSHOT"
+val thisPublishVersion = "0.3.0-SNAPSHOT"
 
 val scalaVersions = List("2.11.12", "2.12.6")
 val thisScalaJSVersion = "0.6.23"
 
 val macroParadiseVersion = "2.1.0"
 
-// cats libs -- maintain versions matching up
-val monocleVersion = "1.5.1-cats"
-val scalajsReactVersion = "1.2.3"
-val scalajsScalaCSSVersion = "0.5.3"
-// TODO make things serialization-library-agnostic, remove react, monocle, etc.
+// TODO make things serialization-library-agnostic, or switch to circe
 val upickleVersion = "0.5.1"
 val scalatagsVersion = "0.6.5"
 
@@ -52,8 +48,6 @@ trait SpacroModule extends CrossScalaModule with PublishModule with ScalafmtModu
   def ivyDeps = Agg(
     ivy"com.lihaoyi::upickle::$upickleVersion",
     ivy"com.lihaoyi::scalatags::$scalatagsVersion",
-    ivy"com.github.julien-truffaut::monocle-core::$monocleVersion",
-    ivy"com.github.julien-truffaut::monocle-macro::$monocleVersion"
   )
 
   def scalacPluginIvyDeps = super.scalacPluginIvyDeps() ++ Agg(
@@ -100,11 +94,6 @@ object spacro extends Module {
     def ivyDeps = super.ivyDeps() ++ Agg(
       ivy"org.scala-js::scalajs-dom::$scalajsDomVersion",
       ivy"be.doeraene::scalajs-jquery::$scalajsJqueryVersion",
-      ivy"com.github.japgolly.scalajs-react::core::$scalajsReactVersion",
-      ivy"com.github.japgolly.scalajs-react::ext-monocle::$scalajsReactVersion",
-      ivy"com.github.japgolly.scalajs-react::ext-cats::$scalajsReactVersion",
-      ivy"com.github.japgolly.scalacss::core::$scalajsScalaCSSVersion",
-      ivy"com.github.japgolly.scalacss::ext-react::$scalajsScalaCSSVersion"
     )
   }
 }
