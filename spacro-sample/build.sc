@@ -2,8 +2,8 @@ import mill._, mill.scalalib._, mill.scalalib.publish._, mill.scalajslib._
 import mill.scalalib.scalafmt._
 import ammonite.ops._
 
-val thisScalaVersion = "2.11.12"
-val thisScalaJSVersion = "0.6.23"
+val thisScalaVersion = "2.12.8"
+val thisScalaJSVersion = "0.6.27"
 
 val spacroVersion = "0.3.0-SNAPSHOT"
 
@@ -12,15 +12,12 @@ val macroParadiseVersion = "2.1.0"
 // cats libs -- maintain versions matching up
 val scalajsReactVersion = "1.2.3"
 val scalajsScalaCSSVersion = "0.5.3"
-val monocleVersion = "1.5.1-cats"
 
-val upickleVersion = "0.4.4"
+val scalajsDomVersion = "0.9.6"
+val scalajsJqueryVersion = "0.9.3"
 
-val akkaActorVersion = "2.4.8"
 val logbackVersion = "1.2.3"
 
-val scalajsDomVersion = "0.9.0"
-val scalajsJqueryVersion = "0.9.0"
 
 trait SimpleJSDeps extends Module {
   def jsDeps = T { Agg.empty[String] }
@@ -80,7 +77,6 @@ object sample extends Module {
     def platformSegment = "jvm"
 
     def ivyDeps = super.ivyDeps() ++ Agg(
-      ivy"com.typesafe.akka::akka-actor:$akkaActorVersion",
       ivy"ch.qos.logback:logback-classic:$logbackVersion"
     )
 
@@ -100,9 +96,6 @@ object sample extends Module {
     def mainClass = T(Some("spacro.sample.Dispatcher"))
 
     def ivyDeps = super.ivyDeps() ++ Agg(
-      ivy"com.lihaoyi::upickle::$upickleVersion",
-      ivy"com.github.julien-truffaut::monocle-core::$monocleVersion",
-      ivy"com.github.julien-truffaut::monocle-macro::$monocleVersion",
       ivy"org.scala-js::scalajs-dom::$scalajsDomVersion",
       ivy"be.doeraene::scalajs-jquery::$scalajsJqueryVersion",
       ivy"com.github.japgolly.scalajs-react::core::$scalajsReactVersion",

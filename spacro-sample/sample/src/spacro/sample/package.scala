@@ -1,5 +1,7 @@
 package spacro
 
+import jjm.DotKleisli
+
 import io.circe.{Encoder, Decoder}
 
 package object sample {
@@ -35,7 +37,7 @@ package object sample {
   }
 
   case class SampleAjaxRequest(prompt: SamplePrompt) {
-    type Response = SampleAjaxResponse
+    type Out = SampleAjaxResponse
   }
 
   object SampleAjaxRequest {
@@ -45,9 +47,11 @@ package object sample {
     implicit val sampleAjaxRequestDecoder: Decoder[SampleAjaxRequest] = deriveDecoder[SampleAjaxRequest]
     implicit val sampleAjaxRequestEncoder: Encoder[SampleAjaxRequest] = deriveEncoder[SampleAjaxRequest]
 
-    implicit val responseCodec = new ResponseCodec[SampleAjaxRequest] {
-      override def getDecoder(request: SampleAjaxRequest) = implicitly[Decoder[request.Response]]
-      override def getEncoder(request: SampleAjaxRequest) = implicitly[Encoder[request.Response]]
+    implicit val sampleAjaxRequestDotDecoder = new DotKleisli[Decoder, SampleAjaxRequest] {
+      def apply(request: SampleAjaxRequest) = implicitly[Decoder[request.Out]]
+    }
+    implicit val sampleAjaxRequestDotEncoder = new DotKleisli[Encoder, SampleAjaxRequest] {
+      def apply(request: SampleAjaxRequest) = implicitly[Encoder[request.Out]]
     }
   }
 }

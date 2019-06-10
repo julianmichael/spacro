@@ -1,5 +1,9 @@
 package spacro.sample
 
+import jjm.DotKleisli
+
+import cats.Id
+
 import spacro._
 import spacro.tasks._
 import spacro.util._
@@ -38,9 +42,8 @@ class SampleExperiment(implicit config: TaskConfig) {
   //   case SentenceRequest(id) => SentenceResponse(id, sentences(id))
   // }
 
-  lazy val sampleAjaxService = new Service[SampleAjaxRequest] {
-
-    def processRequest(request: SampleAjaxRequest) =
+  lazy val sampleAjaxService = new DotKleisli[Id, SampleAjaxRequest] {
+    def apply(request: SampleAjaxRequest) =
       SampleAjaxResponse(sentences(request.prompt.id))
   }
 

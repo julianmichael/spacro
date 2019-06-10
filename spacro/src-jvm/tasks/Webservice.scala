@@ -91,8 +91,8 @@ class Webservice(tasks: List[TaskSpecification])(implicit fm: Materializer, conf
                   scala.util.Try {
                     import taskSpec.ajaxRequestDecoder
                     val request = decode[taskSpec.AjaxRequest](e).right.get
-                    val responseEncoder = taskSpec.ajaxResponseEncoder.getEncoder(request)
-                    val response = taskSpec.ajaxService.processRequest(request)
+                    val responseEncoder = taskSpec.ajaxResponseEncoder(request)
+                    val response = taskSpec.ajaxService(request)
                     HttpEntity(ContentTypes.`text/html(UTF-8)`, printer.pretty(response.asJson(responseEncoder)))
                   }.toOption
                 }
@@ -100,7 +100,6 @@ class Webservice(tasks: List[TaskSpecification])(implicit fm: Materializer, conf
             }
           }
         } ~ getFromResourceDirectory("")
-
       }
     }
 

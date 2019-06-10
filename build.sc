@@ -7,19 +7,19 @@ import ammonite.ops._
 
 val thisPublishVersion = "0.3.0-SNAPSHOT"
 
-val scalaVersions = List("2.11.12", "2.12.6")
-val thisScalaJSVersion = "0.6.23"
+val scalaVersions = List("2.12.8")
+val thisScalaJSVersion = "0.6.27"
 
 val macroParadiseVersion = "2.1.0"
+val kindProjectorVersion = "0.9.4"
 
-// TODO make things serialization-library-agnostic, or switch to circe
-val circeVersion = "0.10.0"
-// val upickleVersion = "0.5.1"
+val jjmVersion = "0.1.0-SNAPSHOT"
+val circeVersion = "0.11.1"
+
 val scalatagsVersion = "0.6.5"
-
 val macmemoVersion = "0.4"
 val scalaXmlVersion = "1.1.0"
-val akkaActorVersion = "2.4.20"
+val akkaActorVersion = "2.5.23"
 val akkaHttpVersion = "10.0.10"
 val akkaHttpCorsVersion = "0.2.2"
 val scalaArmVersion = "2.0"
@@ -47,14 +47,16 @@ trait SpacroModule extends CrossScalaModule with PublishModule with ScalafmtModu
   )
 
   def ivyDeps = Agg(
+    ivy"org.julianmichael::jjm-core::$jjmVersion",
     ivy"io.circe::circe-core::$circeVersion",
     ivy"io.circe::circe-generic::$circeVersion",
     ivy"io.circe::circe-parser::$circeVersion",
     ivy"com.lihaoyi::scalatags::$scalatagsVersion",
   )
 
-  def scalacPluginIvyDeps = super.scalacPluginIvyDeps() ++ Agg(
-    ivy"org.scalamacros:::paradise:$macroParadiseVersion"
+  override def scalacPluginIvyDeps = super.scalacPluginIvyDeps() ++ Agg(
+    ivy"org.scalamacros:::paradise:$macroParadiseVersion",
+    ivy"org.spire-math::kind-projector:$kindProjectorVersion"
   )
 
   // publish settings

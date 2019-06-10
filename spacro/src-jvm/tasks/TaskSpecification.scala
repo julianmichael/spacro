@@ -1,5 +1,12 @@
 package spacro.tasks
 
+import jjm.Dot
+import jjm.DotKleisli
+import jjm.DotUnit
+import jjm.DotFunction
+import jjm.DotEncoder
+import jjm.implicits._
+
 import spacro._
 import spacro.util._
 
@@ -61,14 +68,14 @@ sealed trait TaskSpecification {
   implicit val websocketResponseEncoder: Encoder[WebsocketResponse]
 
   // response type depends on request type because each response is specific to a request
-  type AjaxRequest <: { type Response }
+  type AjaxRequest <: Dot
   implicit val ajaxRequestDecoder: Decoder[AjaxRequest]
-  implicit val ajaxResponseEncoder: ResponseEncoder[AjaxRequest]
+  implicit val ajaxResponseEncoder: DotEncoder[AjaxRequest]
 
   val samplePrompts: Vector[Prompt]
 
   val apiFlow: Flow[WebsocketRequest, WebsocketResponse, Any]
-  val ajaxService: Service[AjaxRequest]
+  val ajaxService: DotFunction[AjaxRequest]
 
   val frozenHITTypeId: Option[String]
   val taskPageHeadElements: List[TypedTag[String]]
@@ -250,11 +257,11 @@ object TaskSpecification {
     ): NoApi {
       type Prompt = P; type Response = R;
     } =
-      TaskSpecificationImpl[P, R, Unit, Unit, Service.UnitRequest](
+      TaskSpecificationImpl[P, R, Unit, Unit, DotUnit](
         taskKey,
         hitType,
         Flow[Unit],
-        Service.unitServer,
+        DotKleisli.unit,
         samplePrompts,
         frozenHITTypeId,
         taskPageHeadElements,
@@ -268,10 +275,10 @@ object TaskSpecification {
 
   object NoWebsockets {
 
-    def apply[P, R, AjaxReq <: { type Response }](
+    def apply[P, R, AjaxReq <: Dot](
       taskKey: String,
       hitType: HITType,
-      ajaxService: Service[AjaxReq],
+      ajaxService: DotFunction[AjaxReq],
       samplePrompts: Vector[P],
       frozenHITTypeId: Option[String] = None,
       taskPageHeadElements: List[TypedTag[String]] = Nil,
@@ -280,7 +287,7 @@ object TaskSpecification {
       implicit promptEncoder: Encoder[P],
       responseDecoder: Decoder[R],
       ajaxRequestDecoder: Decoder[AjaxReq],
-      ajaxResponseEncoder: ResponseEncoder[AjaxReq],
+      ajaxResponseEncoder: DotEncoder[AjaxReq],
       config: TaskConfig
     ): NoWebsockets {
       type Prompt = P; type Response = R;
@@ -298,7 +305,7 @@ object TaskSpecification {
       )
   }
 
-  type NoAjax = TaskSpecification { type AjaxRequest = Service.UnitRequest }
+  type NoAjax = TaskSpecification { type AjaxRequest = DotUnit }
 
   object NoAjax {
 
@@ -320,11 +327,11 @@ object TaskSpecification {
       type Prompt = P; type Response = R;
       type WebsocketRequest = WebsocketReq; type WebsocketResponse = WebsocketResp;
     } =
-      TaskSpecificationImpl[P, R, WebsocketReq, WebsocketResp, Service.UnitRequest](
+      TaskSpecificationImpl[P, R, WebsocketReq, WebsocketResp, DotUnit](
         taskKey,
         hitType,
         apiFlow,
-        Service.unitServer,
+        DotKleisli.unit,
         samplePrompts,
         frozenHITTypeId,
         taskPageHeadElements,
@@ -337,12 +344,12 @@ object TaskSpecification {
     R,
     WebsocketReq,
     WebsocketResp,
-    AjaxReq <: { type Response }
+    AjaxReq <: Dot
   ](
     override val taskKey: String,
     override val hitType: HITType,
     override val apiFlow: Flow[WebsocketReq, WebsocketResp, Any],
-    override val ajaxService: Service[AjaxReq],
+    override val ajaxService: DotFunction[AjaxReq],
     override val samplePrompts: Vector[P],
     override val frozenHITTypeId: Option[String],
     override val taskPageHeadElements: List[TypedTag[String]],
@@ -353,7 +360,7 @@ object TaskSpecification {
     override val websocketRequestDecoder: Decoder[WebsocketReq],
     override val websocketResponseEncoder: Encoder[WebsocketResp],
     override val ajaxRequestDecoder: Decoder[AjaxReq],
-    override val ajaxResponseEncoder: ResponseEncoder[AjaxReq],
+    override val ajaxResponseEncoder: DotEncoder[AjaxReq],
     override val config: TaskConfig
   ) extends TaskSpecification {
 
@@ -364,11 +371,11 @@ object TaskSpecification {
     override type AjaxRequest = AjaxReq
   }
 
-  def apply[P, R, WebsocketReq, WebsocketResp, AjaxReq <: { type Response }](
+  def apply[P, R, WebsocketReq, WebsocketResp, AjaxReq <: Dot](
     taskKey: String,
     hitType: HITType,
     apiFlow: Flow[WebsocketReq, WebsocketResp, Any],
-    ajaxService: Service[AjaxReq],
+    ajaxService: DotFunction[AjaxReq],
     samplePrompts: Vector[P],
     frozenHITTypeId: Option[String] = None,
     taskPageHeadElements: List[TypedTag[String]] = Nil,
@@ -379,7 +386,7 @@ object TaskSpecification {
     websocketRequestDecoder: Decoder[WebsocketReq],
     websocketResponseEncoder: Encoder[WebsocketResp],
     ajaxRequestDecoder: Decoder[AjaxReq],
-    ajaxResponseEncoder: ResponseEncoder[AjaxReq],
+    ajaxResponseEncoder: DotEncoder[AjaxReq],
     config: TaskConfig
   ): TaskSpecification {
     type Prompt = P; type Response = R;
