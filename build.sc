@@ -14,12 +14,12 @@ val macroParadiseVersion = "2.1.0"
 val kindProjectorVersion = "0.9.4"
 
 val jjmVersion = "0.1.0-SNAPSHOT"
-val circeVersion = "0.11.1"
+// val circeVersion = "0.11.1"
 
 val scalatagsVersion = "0.6.5"
 val macmemoVersion = "0.4"
 val scalaXmlVersion = "1.1.0"
-val akkaActorVersion = "2.5.23"
+val akkaActorVersion = "2.4.20"
 val akkaHttpVersion = "10.0.10"
 val akkaHttpCorsVersion = "0.2.2"
 val scalaArmVersion = "2.0"
@@ -48,9 +48,9 @@ trait SpacroModule extends CrossScalaModule with PublishModule with ScalafmtModu
 
   def ivyDeps = Agg(
     ivy"org.julianmichael::jjm-core::$jjmVersion",
-    ivy"io.circe::circe-core::$circeVersion",
-    ivy"io.circe::circe-generic::$circeVersion",
-    ivy"io.circe::circe-parser::$circeVersion",
+    // ivy"io.circe::circe-core::$circeVersion",
+    // ivy"io.circe::circe-generic::$circeVersion",
+    // ivy"io.circe::circe-parser::$circeVersion",
     ivy"com.lihaoyi::scalatags::$scalatagsVersion",
   )
 
