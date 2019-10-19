@@ -5,7 +5,7 @@ import mill.define.Cross
 import coursier.maven.MavenRepository
 import ammonite.ops._
 
-val thisPublishVersion = "0.3.0-SNAPSHOT"
+val thisPublishVersion = "0.3.0"
 
 val scalaVersions = List("2.12.8")
 val thisScalaJSVersion = "0.6.27"
@@ -13,8 +13,7 @@ val thisScalaJSVersion = "0.6.27"
 val macroParadiseVersion = "2.1.0"
 val kindProjectorVersion = "0.9.4"
 
-val jjmVersion = "0.1.0-SNAPSHOT"
-// val circeVersion = "0.11.1"
+val jjmVersion = "0.1.0"
 
 val scalatagsVersion = "0.6.5"
 val macmemoVersion = "0.4"
@@ -48,9 +47,6 @@ trait SpacroModule extends CrossScalaModule with PublishModule with ScalafmtModu
 
   def ivyDeps = Agg(
     ivy"org.julianmichael::jjm-core::$jjmVersion",
-    // ivy"io.circe::circe-core::$circeVersion",
-    // ivy"io.circe::circe-generic::$circeVersion",
-    // ivy"io.circe::circe-parser::$circeVersion",
     ivy"com.lihaoyi::scalatags::$scalatagsVersion",
   )
 
