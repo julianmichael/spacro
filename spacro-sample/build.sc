@@ -5,7 +5,7 @@ import ammonite.ops._
 val thisScalaVersion = "2.12.8"
 val thisScalaJSVersion = "0.6.27"
 
-val spacroVersion = "0.3.0-SNAPSHOT"
+val spacroVersion = "0.3.0"
 
 val macroParadiseVersion = "2.1.0"
 
