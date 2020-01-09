@@ -35,20 +35,34 @@ class SampleExperiment(implicit config: TaskConfig) {
   // in the sample task, these prompts are just strings.
   val sentences = List("Hello, this is a sentence.", "This is another sentence.")
 
-  // you must define a Flow (type is from akka-http) for this task, which will determine how
-  // the server responds to WebSocket messages from clients.
-  // Here, we map the prompt (a sentence index) to the sentence it maps to.
+  // If you want a WebSocket connection between the server and client,
+  // you must define a Flow (from akka-http).
+  // In most cases, however, using ajax is easier and will suffice.
+  // Here, we show for completeness how you might map the prompt (a sentence index)
+  // to the sentence it maps to in a Flow.
+  // But we don't actually use it in this example,
+  // hence the usage of the `NoWebsockets` constructor for the TaskSpecification below.
+
   // lazy val sampleApiFlow = Flow[ApiRequest].map {
   //   case SentenceRequest(id) => SentenceResponse(id, sentences(id))
   // }
 
+  // The easiest way to facilitate communication between the client and server is via Ajax.
+  // The DotKleisli type is taken from the jjm utlity library, and it allows for an
+  // expressive, typed API to be expressed in a single type;
+  // i.e., we can implement a complex API with multiple request and response types
+  // using a single object.
+  // In this simple example, we only use one request and response type.
+  // For more details on how DotKleisli works, ask Julian.
   lazy val sampleAjaxService = new DotKleisli[Id, SampleAjaxRequest] {
     def apply(request: SampleAjaxRequest) =
       SampleAjaxResponse(sentences(request.prompt.id))
   }
 
-  // you also need a sample prompt for when you view the local version of the task at
+  // We need a set of sample prompts for when viewing local version of the task at
   // http://localhost:<http port>/task/<task key>/preview
+  // where a URL parameter specified at the end like ?n=1 will show the interface for the
+  // sample prompt at index 1 (default is 0).
   val samplePrompts = Vector(SamplePrompt(0))
 
   // the task specification is defined on the basis of the above fields
@@ -104,4 +118,10 @@ class SampleExperiment(implicit config: TaskConfig) {
   // should finalize all of it before the Big Run so that you don't have to shut down the server intermittently
   // to run newly compiled code. (though, realistically, this will probably happen once or twice,
   // so try to be ready to do that if necessary without losing any data.)
+
+  // For examples of utility methods which might be useful,
+  // or just for a much more complex annotation pipeline,
+  // see the annotation pipelines in the QA-SRL Crowdsourcing project, e.g., at
+  // https://github.com/julianmichael/qasrl-crowdsourcing/blob/master/qasrl-crowd/src-jvm/qasrl/crowd/QASRLAnnotationPipeline.scala#L530
+
 }
