@@ -35,6 +35,8 @@ class SampleExperiment(implicit config: TaskConfig) {
   // in the sample task, these prompts are just strings.
   val sentences = List("Hello, this is a sentence.", "This is another sentence.")
 
+  val prompts = sentences.indices.map(SamplePrompt(_)).toVector
+
   // If you want a WebSocket connection between the server and client,
   // you must define a Flow (from akka-http).
   // In most cases, however, using ajax is easier and will suffice.
@@ -63,7 +65,8 @@ class SampleExperiment(implicit config: TaskConfig) {
   // http://localhost:<http port>/task/<task key>/preview
   // where a URL parameter specified at the end like ?n=1 will show the interface for the
   // sample prompt at index 1 (default is 0).
-  val samplePrompts = Vector(SamplePrompt(0))
+  // Here, we're just using the full list of prompts.
+  val samplePrompts = prompts
 
   // the task specification is defined on the basis of the above fields
   lazy val taskSpec =
@@ -85,7 +88,11 @@ class SampleExperiment(implicit config: TaskConfig) {
   lazy val hitManager = actorSystem.actorOf(
     Props(
       NumAssignmentsHITManager
-        .constAssignments[SamplePrompt, SampleResponse](helper, 1, 3, samplePrompts.iterator)
+        .constAssignments[SamplePrompt, SampleResponse](
+          helper = helper,
+          numAssignmentsPerPrompt = 1,
+          initNumHITsToKeepActive = 3,
+          _promptSource = prompts.iterator)
     )
   )
 
