@@ -44,8 +44,6 @@ object TaskPage {
         // script(
         //   `type` := "text/javascript",
         //   src := s"https://code.jquery.com/jquery-2.1.4.min.js"),
-        script(`type` := "text/javascript", src := s"$protocol//$serverDomain:$port/jsdeps.js"),
-        script(`type` := "text/javascript", src := s"$protocol//$serverDomain:$port/out.js"),
         // script(
         //   `type` := "text/javascript",
         //   src := s"$protocol//$serverDomain:$port/$projectName-jsdeps.js"),
@@ -109,7 +107,9 @@ object TaskPage {
             "Waiting for task data from server... (If this message does not disappear shortly, the server is down. Try refreshing in a minute or so.)"
           )
         ),
-        bodyEndTags
+        bodyEndTags,
+        script(`type` := "text/javascript", src := s"$protocol//$serverDomain:$port/jsdeps.js"),
+        script(`type` := "text/javascript", src := s"$protocol//$serverDomain:$port/out.js"),
       )
     )
   }
