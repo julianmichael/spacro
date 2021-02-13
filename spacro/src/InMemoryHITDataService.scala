@@ -21,17 +21,17 @@ class InMemoryHITDataService extends HITDataService {
   ) {
 
     def approve[Response: Encoder](assignment: Assignment[Response]) =
-      this.copy(approved = assignment.copy(response = printer.pretty(assignment.response.asJson)) :: this.approved)
+      this.copy(approved = assignment.copy(response = printer.print(assignment.response.asJson)) :: this.approved)
 
     def reject[Response: Encoder](assignment: Assignment[Response]) =
-      this.copy(rejected = assignment.copy(response = printer.pretty(assignment.response.asJson)) :: this.rejected)
+      this.copy(rejected = assignment.copy(response = printer.print(assignment.response.asJson)) :: this.rejected)
     def hitInfo = HITInfo(hit, approved)
   }
 
   object HITStore {
 
     def fromHIT[Prompt: Encoder](hit: HIT[Prompt]) =
-      HITStore(hit.copy(prompt = printer.pretty(hit.prompt.asJson)), Nil, Nil)
+      HITStore(hit.copy(prompt = printer.print(hit.prompt.asJson)), Nil, Nil)
   }
 
   private[this] val data = mutable.Map.empty[

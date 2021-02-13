@@ -6,7 +6,7 @@ import com.amazonaws.services.mturk.model._
 import com.amazonaws.services.mturk._
 val hitDataService = new InMemoryHITDataService
 val interface = "0.0.0.0"
-val domain = "recycle.cs.washington.edu"
+val domain = "localhost"
 val httpsPort = 8080
 val httpPort = 7777
 implicit val config = SandboxTaskConfig(

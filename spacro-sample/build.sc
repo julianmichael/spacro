@@ -2,19 +2,19 @@ import mill._, mill.scalalib._, mill.scalalib.publish._, mill.scalajslib._
 import mill.scalalib.scalafmt._
 import ammonite.ops._
 
-val thisScalaVersion = "2.12.8"
-val thisScalaJSVersion = "0.6.27"
+val thisScalaVersion = "2.12.13"
+val thisScalaJSVersion = "1.4.0"
 
-val spacroVersion = "0.3.0"
+val spacroVersion = "0.4.0-SNAPSHOT"
 
-val macroParadiseVersion = "2.1.0"
+val macroParadiseVersion = "2.1.1"
 
 // cats libs -- maintain versions matching up
-val scalajsReactVersion = "1.2.3"
-val scalajsScalaCSSVersion = "0.5.3"
+val scalajsReactVersion = "1.7.7"
+val scalacssVersion = "0.7.0"
 
-val scalajsDomVersion = "0.9.6"
-val scalajsJqueryVersion = "0.9.3"
+val scalajsDomVersion = "1.1.0"
+val scalajsJqueryVersion = "1.0.0"
 
 val logbackVersion = "1.2.3"
 
@@ -101,8 +101,8 @@ object sample extends Module {
       ivy"com.github.japgolly.scalajs-react::core::$scalajsReactVersion",
       ivy"com.github.japgolly.scalajs-react::ext-monocle::$scalajsReactVersion",
       ivy"com.github.japgolly.scalajs-react::ext-cats::$scalajsReactVersion",
-      ivy"com.github.japgolly.scalacss::core::$scalajsScalaCSSVersion",
-      ivy"com.github.japgolly.scalacss::ext-react::$scalajsScalaCSSVersion"
+      ivy"com.github.japgolly.scalacss::core::$scalacssVersion",
+      ivy"com.github.japgolly.scalacss::ext-react::$scalacssVersion"
     )
 
     def jsDeps = Agg(

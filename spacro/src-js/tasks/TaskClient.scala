@@ -3,9 +3,6 @@ package spacro.tasks
 import jjm.Dot
 import jjm.DotDecoder
 
-import scalajs.js
-import scalajs.js.JSApp
-
 import org.scalajs.jquery.jQuery
 import org.scalajs.dom
 
@@ -68,7 +65,7 @@ abstract class TaskClient[
   def makeAjaxRequest(request: AjaxRequest): Future[request.Out] = {
     import scala.concurrent.ExecutionContext.Implicits.global
     dom.ext.Ajax
-      .post(url = ajaxUri, data = printer.pretty(request.asJson))
+      .post(url = ajaxUri, data = printer.print(request.asJson))
       .map { response =>
         decode[request.Out](response.responseText)(
           implicitly[DotDecoder[AjaxRequest]].apply(request)
@@ -92,7 +89,7 @@ abstract class TaskClient[
   }
 
   def setResponse(response: Response): Unit = {
-    jQuery(s"#$responseLabel").attr("value", printer.pretty(response.asJson))
+    jQuery(s"#$responseLabel").attr("value", printer.print(response.asJson))
   }
 
   def main(): Unit

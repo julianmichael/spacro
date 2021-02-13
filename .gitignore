@@ -1,4 +1,7 @@
 *.class
 *.log
 
-out
+/out
+/spacro-sample/out
+/.bloop
+/.metals

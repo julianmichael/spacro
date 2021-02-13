@@ -58,31 +58,31 @@ object TaskPage {
       body()(
         input(
           `type` := "hidden",
-          value := printer.pretty(prompt.asJson),
+          value := printer.print(prompt.asJson),
           name := FieldLabels.promptLabel,
           id := FieldLabels.promptLabel
         ),
         input(
           `type` := "hidden",
-          value := printer.pretty(serverDomain.asJson),
+          value := printer.print(serverDomain.asJson),
           name := FieldLabels.serverDomainLabel,
           id := FieldLabels.serverDomainLabel
         ),
         input(
           `type` := "hidden",
-          value := printer.pretty(config.httpPort.asJson),
+          value := printer.print(config.httpPort.asJson),
           name := FieldLabels.httpPortLabel,
           id := FieldLabels.httpPortLabel
         ),
         input(
           `type` := "hidden",
-          value := printer.pretty(config.httpsPort.asJson),
+          value := printer.print(config.httpsPort.asJson),
           name := FieldLabels.httpsPortLabel,
           id := FieldLabels.httpsPortLabel
         ),
         input(
           `type` := "hidden",
-          value := printer.pretty(taskSpec.taskKey.asJson),
+          value := printer.print(taskSpec.taskKey.asJson),
           name := FieldLabels.taskKeyLabel,
           id := FieldLabels.taskKeyLabel
         ),
@@ -97,7 +97,7 @@ object TaskPage {
           // where our client code should put the response
           input(
             `type` := "hidden",
-            value := "", // TODO printer.pretty((None: Option[Response]).asJson)
+            value := "", // TODO printer.print((None: Option[Response]).asJson)
             name := FieldLabels.responseLabel,
             id := FieldLabels.responseLabel
           ),

@@ -282,7 +282,7 @@ object HITManager {
             )
             config.hitDataService.saveApprovedAssignment(assignment).recover {
               case e =>
-                logger.error(s"Failed to save approved assignment; data:\n${printer.pretty(assignment.asJson)}")
+                logger.error(s"Failed to save approved assignment; data:\n${printer.print(assignment.asJson)}")
             }
           }
         case Rejection(message) =>
@@ -300,7 +300,7 @@ object HITManager {
             )
             config.hitDataService.saveRejectedAssignment(assignment) recover {
               case e =>
-                logger.error(s"Failed to save approved assignment; data:\n${printer.pretty(assignment.asJson)}")
+                logger.error(s"Failed to save approved assignment; data:\n${printer.print(assignment.asJson)}")
             }
           }
       }

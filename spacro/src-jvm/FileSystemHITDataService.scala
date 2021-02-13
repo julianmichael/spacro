@@ -92,7 +92,7 @@ class FileSystemHITDataService(root: Path) extends HITDataService with StrictLog
 
   override def saveHIT[Prompt: Encoder](hit: HIT[Prompt]): Try[Unit] = {
     val savePath = getHITPath(hit.hitTypeId, hit.hitId).resolve(hitFilename)
-    saveFile(savePath, printer.pretty(hit.asJson))
+    saveFile(savePath, printer.print(hit.asJson))
   }
 
   import com.softwaremill.macmemo.memoize
@@ -112,7 +112,7 @@ class FileSystemHITDataService(root: Path) extends HITDataService with StrictLog
   ): Try[Unit] = Try {
     val directory = getHITPath(assignment.hitTypeId, assignment.hitId)
     val savePath = directory.resolve(s"${assignment.assignmentId}.txt")
-    saveFile(savePath, printer.pretty(assignment.asJson))
+    saveFile(savePath, printer.print(assignment.asJson))
   }
 
   override def saveRejectedAssignment[Response: Encoder](
@@ -120,7 +120,7 @@ class FileSystemHITDataService(root: Path) extends HITDataService with StrictLog
   ): Try[Unit] = Try {
     val directory = getRejectionPath(assignment.hitTypeId, assignment.hitId)
     val savePath = directory.resolve(s"${assignment.assignmentId}.txt")
-    saveFile(savePath, printer.pretty(assignment.asJson))
+    saveFile(savePath, printer.print(assignment.asJson))
   }
 
   override def getHITInfo[Prompt: Decoder, Response: Decoder](

@@ -93,7 +93,7 @@ class Webservice(tasks: List[TaskSpecification])(implicit fm: Materializer, conf
                     val request = decode[taskSpec.AjaxRequest](e).right.get
                     val responseEncoder = taskSpec.ajaxResponseEncoder(request)
                     val response = taskSpec.ajaxService(request)
-                    HttpEntity(ContentTypes.`text/html(UTF-8)`, printer.pretty(response.asJson(responseEncoder)))
+                    HttpEntity(ContentTypes.`text/html(UTF-8)`, printer.print(response.asJson(responseEncoder)))
                   }.toOption
                 }
               }
@@ -132,7 +132,7 @@ class Webservice(tasks: List[TaskSpecification])(implicit fm: Materializer, conf
       .keepAlive(30 seconds, () => Heartbeat) // send heartbeat every 30 seconds to keep connection alive
       .map(
         message =>
-          TextMessage.Strict(printer.pretty(message.asJson))
+          TextMessage.Strict(printer.print(message.asJson))
       )
   }
 }
