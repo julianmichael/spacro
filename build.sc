@@ -5,7 +5,7 @@ import mill.define.Cross
 import coursier.maven.MavenRepository
 import ammonite.ops._
 
-val thisPublishVersion = "0.4.0-SNAPSHOT"
+val thisPublishVersion = "0.4.0"
 val jjmVersion = "0.2.0"
 
 val scalaVersions = List(
