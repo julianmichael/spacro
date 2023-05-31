@@ -1,6 +1,6 @@
 import mill._, mill.scalalib._, mill.scalalib.publish._, mill.scalajslib._
 import mill.scalalib.scalafmt._
-import ammonite.ops._
+import os._
 
 val thisScalaVersion = "2.12.13"
 val thisScalaJSVersion = "1.4.0"
@@ -19,24 +19,49 @@ val scalajsJqueryVersion = "1.0.0"
 val logbackVersion = "1.2.3"
 
 
+// trait SimpleJSDeps extends Module {
+//   def jsDeps = T { Agg.empty[String] }
+//   def downloadedJSDeps = T {
+//     for(url <- jsDeps()) yield {
+//       val filename = url.substring(url.lastIndexOf("/") + 1)
+//         %("curl", "-o", filename, url)(T.ctx().dest)
+//       T.ctx().dest / filename
+//     }
+//   }
+//   def aggregatedJSDeps = T {
+//     val targetPath = T.ctx().dest / "jsdeps.js"
+//     downloadedJSDeps().foreach { path =>
+//       write.append(targetPath, read!(path))
+//       write.append(targetPath, "\n")
+//     }
+//     targetPath
+//   }
+// }
+// for some reason the $file import doesn't work anymore?
+// import $file.`scripts-build`.SimpleJSDepsBuild, SimpleJSDepsBuild.SimpleJSDeps
 trait SimpleJSDeps extends Module {
-  def jsDeps = T { Agg.empty[String] }
+  def jsDeps = T {
+    Agg.empty[String]
+  }
   def downloadedJSDeps = T {
-    for(url <- jsDeps()) yield {
-      val filename = url.substring(url.lastIndexOf("/") + 1)
-        %("curl", "-o", filename, url)(T.ctx().dest)
-      T.ctx().dest / filename
-    }
+    for (url <- jsDeps())
+      yield {
+        val filename = url.substring(url.lastIndexOf("/") + 1)
+        os.proc("curl", "-o", filename, url).call(cwd = T.ctx().dest)
+        T.ctx().dest / filename
+      }
   }
   def aggregatedJSDeps = T {
     val targetPath = T.ctx().dest / "jsdeps.js"
+    os.write.append(targetPath, "")
     downloadedJSDeps().foreach { path =>
-      write.append(targetPath, read!(path))
-      write.append(targetPath, "\n")
+      os.write.append(targetPath, os.read(path))
+      os.write.append(targetPath, "\n")
     }
-    targetPath
+    PathRef(targetPath)
   }
 }
+
 
 trait SpacroSampleModule extends ScalaModule with ScalafmtModule {
 
@@ -83,7 +108,7 @@ object sample extends Module {
     def resources = T.sources(
       millSourcePath / "resources",
       sample.js.fastOpt().path / RelPath.up,
-      sample.js.aggregatedJSDeps() / RelPath.up
+      sample.js.aggregatedJSDeps().path / RelPath.up
     )
 
   }
