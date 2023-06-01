@@ -43,16 +43,14 @@ class LazyStackQueue[A](
   def enqueue(a: A): Unit = bottom.enqueue(a)
 
   /** Pops an element from the top. */
-  def pop: Option[A] =
-    top.popOption.orElse(popFromMiddleOption).orElse(bottom.dequeueOption)
+  def pop: Option[A] = top.popOption.orElse(popFromMiddleOption).orElse(bottom.dequeueOption)
 
   /** Pops until finding an element satisfying the given predicate, and returns it (or None if exhausted). */
   def filterPop(predicate: A => Boolean): Option[A] =
     Stream.continually(pop).dropWhile(!_.forall(predicate)).head
 
   /** Pops n elements from the top (or fewer if exhausted). */
-  def pop(n: Int): List[A] =
-    Vector.fill(n)(pop).flatten.toList
+  def pop(n: Int): List[A] = Vector.fill(n)(pop).flatten.toList
 
   /** Pops until having obtained n elements satisfying the predicate (or fewer if exhausted). */
   def filterPop(predicate: A => Boolean, n: Int): List[A] =

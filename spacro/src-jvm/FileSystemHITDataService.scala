@@ -33,18 +33,20 @@ class FileSystemHITDataService(root: Path) extends HITDataService with StrictLog
   }
 
   private[this] def loadSerialized[A: Decoder](path: Path): Try[A] = {
-    val res = for {
-      lines <- loadFile(path)
-    } yield Try(decode[A](lines.mkString("\n")).right.get)
+    val res =
+      for {
+        lines <- loadFile(path)
+      } yield Try(decode[A](lines.mkString("\n")).right.get)
     res.tried.flatten
   }
 
-  private[this] def saveFile(path: Path, contents: String): Try[Unit] =
-    Try(Files.write(path, contents.getBytes))
+  private[this] def saveFile(path: Path, contents: String): Try[Unit] = Try(
+    Files.write(path, contents.getBytes)
+  )
 
   // == Useful file/folder names ==
 
-  private[this] val hitFilename = "hit.txt"
+  private[this] val hitFilename        = "hit.txt"
   private[this] val rejectionDirectory = "rejections"
 
   // == Path accessors ==
@@ -67,9 +69,8 @@ class FileSystemHITDataService(root: Path) extends HITDataService with StrictLog
   }
 
   // TODO maybe this should check for existence of hit.txt?
-  private[this] def hitExists(hitTypeId: String, hitId: String) = {
+  private[this] def hitExists(hitTypeId: String, hitId: String) =
     Files.exists(getHITTypePath(hitTypeId).resolve(hitId))
-  }
 
   private[this] def getHITPath(hitTypeId: String, hitId: String) = {
     val hitPath = getHITTypePath(hitTypeId).resolve(hitId)
@@ -80,7 +81,7 @@ class FileSystemHITDataService(root: Path) extends HITDataService with StrictLog
   }
 
   private[this] def getRejectionPath(hitTypeId: String, hitId: String) = {
-    val hitPath = getHITPath(hitTypeId, hitId)
+    val hitPath       = getHITPath(hitTypeId, hitId)
     val rejectionPath = hitPath.resolve(rejectionDirectory)
     if (!Files.exists(rejectionPath)) {
       Files.createDirectories(rejectionPath);
@@ -97,21 +98,23 @@ class FileSystemHITDataService(root: Path) extends HITDataService with StrictLog
 
   import com.softwaremill.macmemo.memoize
   import com.softwaremill.macmemo.MemoCacheBuilder
-  private[this] implicit val cacheProvider = MemoCacheBuilder.guavaMemoCacheBuilder
+  implicit private[this] val cacheProvider = MemoCacheBuilder.guavaMemoCacheBuilder
 
   @memoize(maxSize = 500, expiresAfter = 12 hours)
   private[this] def loadHITUnsafe[Prompt: Decoder](path: Path): HIT[Prompt] =
     loadSerialized[HIT[Prompt]](path.resolve(hitFilename)).get
 
   override def getHIT[Prompt: Decoder](hitTypeId: String, hitId: String): Try[HIT[Prompt]] =
-    if (hitExists(hitTypeId, hitId)) Try(loadHITUnsafe(getHITPath(hitTypeId, hitId)))
-    else scala.util.Failure(new RuntimeException(s"HIT ($hitTypeId; $hitId) does not exist"))
+    if (hitExists(hitTypeId, hitId))
+      Try(loadHITUnsafe(getHITPath(hitTypeId, hitId)))
+    else
+      scala.util.Failure(new RuntimeException(s"HIT ($hitTypeId; $hitId) does not exist"))
 
   override def saveApprovedAssignment[Response: Encoder](
     assignment: Assignment[Response]
   ): Try[Unit] = Try {
     val directory = getHITPath(assignment.hitTypeId, assignment.hitId)
-    val savePath = directory.resolve(s"${assignment.assignmentId}.txt")
+    val savePath  = directory.resolve(s"${assignment.assignmentId}.txt")
     saveFile(savePath, printer.print(assignment.asJson))
   }
 
@@ -119,7 +122,7 @@ class FileSystemHITDataService(root: Path) extends HITDataService with StrictLog
     assignment: Assignment[Response]
   ): Try[Unit] = Try {
     val directory = getRejectionPath(assignment.hitTypeId, assignment.hitId)
-    val savePath = directory.resolve(s"${assignment.assignmentId}.txt")
+    val savePath  = directory.resolve(s"${assignment.assignmentId}.txt")
     saveFile(savePath, printer.print(assignment.asJson))
   }
 
@@ -135,14 +138,16 @@ class FileSystemHITDataService(root: Path) extends HITDataService with StrictLog
   override def getAllHITInfo[Prompt: Decoder, Response: Decoder](
     hitTypeId: String
   ): Try[List[HITInfo[Prompt, Response]]] = Try {
-    val allData = for {
-      hitFolder <- new java.io.File(getHITTypePath(hitTypeId).toString).listFiles
-      if hitFolder.isDirectory // exclude extraneous files if necessary --- shouldn't happen though
-      hit <- Try(loadHITUnsafe[Prompt](Paths.get(hitFolder.getPath))).toOptionLogging(logger).toList
-      assignments <- getAssignmentsForHIT[Response](hit.hitTypeId, hit.hitId)
-        .toOptionLogging(logger)
-        .toList
-    } yield HITInfo(hit, assignments)
+    val allData =
+      for {
+        hitFolder <- new java.io.File(getHITTypePath(hitTypeId).toString).listFiles
+        if hitFolder
+          .isDirectory // exclude extraneous files if necessary --- shouldn't happen though
+        hit <-
+          Try(loadHITUnsafe[Prompt](Paths.get(hitFolder.getPath))).toOptionLogging(logger).toList
+        assignments <-
+          getAssignmentsForHIT[Response](hit.hitTypeId, hit.hitId).toOptionLogging(logger).toList
+      } yield HITInfo(hit, assignments)
     allData.toList
   }
 
@@ -151,14 +156,16 @@ class FileSystemHITDataService(root: Path) extends HITDataService with StrictLog
     hitId: String
   ): Try[List[Assignment[Response]]] = Try {
     val hitPath = getHITPath(hitTypeId, hitId)
-    val assignments = for {
-      file <- new java.io.File(hitPath.toString).listFiles
-      if !file.isDirectory // exclude rejection directory
-      if !file.getPath.toString.endsWith(hitFilename.toString) // exclude hit.txt
-      assignment <- loadSerialized[Assignment[Response]](Paths.get(file.getPath))
-        .toOptionLogging(logger)
-        .toList
-    } yield assignment
+    val assignments =
+      for {
+        file <- new java.io.File(hitPath.toString).listFiles
+        if !file.isDirectory                                     // exclude rejection directory
+        if !file.getPath.toString.endsWith(hitFilename.toString) // exclude hit.txt
+        assignment <-
+          loadSerialized[Assignment[Response]](Paths.get(file.getPath))
+            .toOptionLogging(logger)
+            .toList
+      } yield assignment
     assignments.toList
   }
 }

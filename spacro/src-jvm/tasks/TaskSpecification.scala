@@ -95,7 +95,8 @@ sealed trait TaskSpecification {
     * I'm not 100% sure this needs to be lazy... but it's not hurting anyone as it is.
     */
   final lazy val hitTypeId = frozenHITTypeId.getOrElse(
-    config.service
+    config
+      .service
       .createHITType(
         (new CreateHITTypeRequest)
           .withAutoApprovalDelayInSeconds(hitType.autoApprovalDelay)
@@ -131,14 +132,16 @@ sealed trait TaskSpecification {
     // NOTE: don't bother with requester annotation---we don't get it back and it causes errors if >255 bytes (which was documented NOWHERE)
     for {
       hitCreationResult <- Try(
-        config.service.createHITWithHITType(
-          (new CreateHITWithHITTypeRequest)
-            .withHITTypeId(hitTypeId)
-            .withQuestion(questionXML)
-            .withLifetimeInSeconds(lifetime)
-            .withMaxAssignments(numAssignments)
-            .withUniqueRequestToken(uniqueRequestToken)
-        )
+        config
+          .service
+          .createHITWithHITType(
+            (new CreateHITWithHITTypeRequest)
+              .withHITTypeId(hitTypeId)
+              .withQuestion(questionXML)
+              .withLifetimeInSeconds(lifetime)
+              .withMaxAssignments(numAssignments)
+              .withUniqueRequestToken(uniqueRequestToken)
+          )
       )
       hit = HIT(
         hitTypeId,
@@ -173,8 +176,9 @@ sealed trait TaskSpecification {
     * @param answerXML the XML string received from the API
     * @return the annotator's feedback
     */
-  final def extractFeedback(answerXML: String): String =
-    getAnswers(answerXML).get(FieldLabels.feedbackLabel).getOrElse("")
+  final def extractFeedback(answerXML: String): String = getAnswers(answerXML)
+    .get(FieldLabels.feedbackLabel)
+    .getOrElse("")
 
   /** Makes an Assignment data structure corresponding to a completed assignment on MTurk.
     * Does not save it to disk since it hasn't been reviewed yet.
@@ -208,11 +212,11 @@ sealed trait TaskSpecification {
   // == Private methods and fields ==
 
   // auxiliary method for extracting response and feedback
-  private[this] final def getAnswers(answerXML: String): Map[String, String] = {
-    (scala.xml.XML.loadString(answerXML) \ "Answer").toList
+  final private[this] def getAnswers(answerXML: String): Map[String, String] =
+    (scala.xml.XML.loadString(answerXML) \ "Answer")
+      .toList
       .map((x: scala.xml.Node) => (x \ "QuestionIdentifier").text -> (x \ "FreeText").text)
       .toMap
-  }
 
   /** Creates the "question" XML object to send to the MTurk API when creating a HIT.
     *
@@ -224,7 +228,7 @@ sealed trait TaskSpecification {
     * @param prompt the well-typed data representation of a question
     * @return the MTurk-ready XML representation of a question
     */
-  private[this] final def createQuestionXML(prompt: Prompt): String = {
+  final private[this] def createQuestionXML(prompt: Prompt): String =
     s"""
       <?xml version="1.0" encoding="UTF-8"?>
       <HTMLQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd">
@@ -234,7 +238,6 @@ sealed trait TaskSpecification {
         <FrameHeight>600</FrameHeight>
       </HTMLQuestion>
     """.trim
-  }
 }
 
 object TaskSpecification {
@@ -250,28 +253,26 @@ object TaskSpecification {
       frozenHITTypeId: Option[String] = None,
       taskPageHeadElements: List[TypedTag[String]] = Nil,
       taskPageBodyElements: List[TypedTag[String]] = Nil
-    )(
-      implicit promptEncoder: Encoder[P],
-      responseDecoder: Decoder[R],
-      config: TaskConfig
-    ): NoApi {
-      type Prompt = P; type Response = R;
-    } =
-      TaskSpecificationImpl[P, R, Unit, Unit, DotUnit](
-        taskKey,
-        hitType,
-        Flow[Unit],
-        DotKleisli.unit,
-        samplePrompts,
-        frozenHITTypeId,
-        taskPageHeadElements,
-        taskPageBodyElements
-      )
+    )(implicit promptEncoder: Encoder[P], responseDecoder: Decoder[R], config: TaskConfig): NoApi {
+      type Prompt   = P;
+      type Response = R;
+    } = TaskSpecificationImpl[P, R, Unit, Unit, DotUnit](
+      taskKey,
+      hitType,
+      Flow[Unit],
+      DotKleisli.unit,
+      samplePrompts,
+      frozenHITTypeId,
+      taskPageHeadElements,
+      taskPageBodyElements
+    )
   }
 
-  type NoWebsockets = TaskSpecification {
-    type WebsocketRequest = Unit; type WebsocketResponse = Unit
-  }
+  type NoWebsockets =
+    TaskSpecification {
+      type WebsocketRequest  = Unit;
+      type WebsocketResponse = Unit
+    }
 
   object NoWebsockets {
 
@@ -290,22 +291,25 @@ object TaskSpecification {
       ajaxResponseEncoder: DotEncoder[AjaxReq],
       config: TaskConfig
     ): NoWebsockets {
-      type Prompt = P; type Response = R;
+      type Prompt      = P;
+      type Response    = R;
       type AjaxRequest = AjaxReq;
-    } =
-      TaskSpecificationImpl[P, R, Unit, Unit, AjaxReq](
-        taskKey,
-        hitType,
-        Flow[Unit],
-        ajaxService,
-        samplePrompts,
-        frozenHITTypeId,
-        taskPageHeadElements,
-        taskPageBodyElements
-      )
+    } = TaskSpecificationImpl[P, R, Unit, Unit, AjaxReq](
+      taskKey,
+      hitType,
+      Flow[Unit],
+      ajaxService,
+      samplePrompts,
+      frozenHITTypeId,
+      taskPageHeadElements,
+      taskPageBodyElements
+    )
   }
 
-  type NoAjax = TaskSpecification { type AjaxRequest = DotUnit }
+  type NoAjax =
+    TaskSpecification {
+      type AjaxRequest = DotUnit
+    }
 
   object NoAjax {
 
@@ -324,28 +328,23 @@ object TaskSpecification {
       websocketResponseEncoder: Encoder[WebsocketResp],
       config: TaskConfig
     ): NoAjax {
-      type Prompt = P; type Response = R;
-      type WebsocketRequest = WebsocketReq; type WebsocketResponse = WebsocketResp;
-    } =
-      TaskSpecificationImpl[P, R, WebsocketReq, WebsocketResp, DotUnit](
-        taskKey,
-        hitType,
-        apiFlow,
-        DotKleisli.unit,
-        samplePrompts,
-        frozenHITTypeId,
-        taskPageHeadElements,
-        taskPageBodyElements
-      )
+      type Prompt            = P;
+      type Response          = R;
+      type WebsocketRequest  = WebsocketReq;
+      type WebsocketResponse = WebsocketResp;
+    } = TaskSpecificationImpl[P, R, WebsocketReq, WebsocketResp, DotUnit](
+      taskKey,
+      hitType,
+      apiFlow,
+      DotKleisli.unit,
+      samplePrompts,
+      frozenHITTypeId,
+      taskPageHeadElements,
+      taskPageBodyElements
+    )
   }
 
-  private[this] case class TaskSpecificationImpl[
-    P,
-    R,
-    WebsocketReq,
-    WebsocketResp,
-    AjaxReq <: Dot
-  ](
+  private[this] case class TaskSpecificationImpl[P, R, WebsocketReq, WebsocketResp, AjaxReq <: Dot](
     override val taskKey: String,
     override val hitType: HITType,
     override val apiFlow: Flow[WebsocketReq, WebsocketResp, Any],
@@ -364,11 +363,11 @@ object TaskSpecification {
     override val config: TaskConfig
   ) extends TaskSpecification {
 
-    override type Prompt = P
-    override type Response = R
-    override type WebsocketRequest = WebsocketReq
+    override type Prompt            = P
+    override type Response          = R
+    override type WebsocketRequest  = WebsocketReq
     override type WebsocketResponse = WebsocketResp
-    override type AjaxRequest = AjaxReq
+    override type AjaxRequest       = AjaxReq
   }
 
   def apply[P, R, WebsocketReq, WebsocketResp, AjaxReq <: Dot](
@@ -389,18 +388,19 @@ object TaskSpecification {
     ajaxResponseEncoder: DotEncoder[AjaxReq],
     config: TaskConfig
   ): TaskSpecification {
-    type Prompt = P; type Response = R;
-    type WebsocketRequest = WebsocketReq; type WebsocketResponse = WebsocketResp;
-    type AjaxRequest = AjaxReq
-  } =
-    TaskSpecificationImpl[P, R, WebsocketReq, WebsocketResp, AjaxReq](
-      taskKey,
-      hitType,
-      apiFlow,
-      ajaxService,
-      samplePrompts,
-      frozenHITTypeId,
-      taskPageHeadElements,
-      taskPageBodyElements
-    )
+    type Prompt            = P;
+    type Response          = R;
+    type WebsocketRequest  = WebsocketReq;
+    type WebsocketResponse = WebsocketResp;
+    type AjaxRequest       = AjaxReq
+  } = TaskSpecificationImpl[P, R, WebsocketReq, WebsocketResp, AjaxReq](
+    taskKey,
+    hitType,
+    apiFlow,
+    ajaxService,
+    samplePrompts,
+    frozenHITTypeId,
+    taskPageHeadElements,
+    taskPageBodyElements
+  )
 }

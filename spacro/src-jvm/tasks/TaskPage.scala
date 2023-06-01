@@ -19,19 +19,27 @@ object TaskPage {
     headTags: List[TypedTag[String]],
     bodyEndTags: List[TypedTag[String]]
   )(implicit config: TaskConfig) = {
-    val protocol = if (useHttps) "https:" else "http:"
-    val port = if (useHttps) config.httpsPort else config.httpPort
+    val protocol =
+      if (useHttps)
+        "https:"
+      else
+        "http:"
+    val port =
+      if (useHttps)
+        config.httpsPort
+      else
+        config.httpPort
     import config.serverDomain
     import config.projectName
     html(
       head(
         meta(
-          name := "viewport",
+          name    := "viewport",
           content := "width=device-width, initial-scale=1, shrink-to-fit=no"
         ),
         script(
           `type` := "text/javascript",
-          src := "https://s3.amazonaws.com/mturk-public/externalHIT_v1.js"
+          src    := "https://s3.amazonaws.com/mturk-public/externalHIT_v1.js"
         ),
         // script(
         //   `type` := "text/javascript",
@@ -58,38 +66,38 @@ object TaskPage {
       body()(
         input(
           `type` := "hidden",
-          value := printer.print(prompt.asJson),
-          name := FieldLabels.promptLabel,
-          id := FieldLabels.promptLabel
+          value  := printer.print(prompt.asJson),
+          name   := FieldLabels.promptLabel,
+          id     := FieldLabels.promptLabel
         ),
         input(
           `type` := "hidden",
-          value := printer.print(serverDomain.asJson),
-          name := FieldLabels.serverDomainLabel,
-          id := FieldLabels.serverDomainLabel
+          value  := printer.print(serverDomain.asJson),
+          name   := FieldLabels.serverDomainLabel,
+          id     := FieldLabels.serverDomainLabel
         ),
         input(
           `type` := "hidden",
-          value := printer.print(config.httpPort.asJson),
-          name := FieldLabels.httpPortLabel,
-          id := FieldLabels.httpPortLabel
+          value  := printer.print(config.httpPort.asJson),
+          name   := FieldLabels.httpPortLabel,
+          id     := FieldLabels.httpPortLabel
         ),
         input(
           `type` := "hidden",
-          value := printer.print(config.httpsPort.asJson),
-          name := FieldLabels.httpsPortLabel,
-          id := FieldLabels.httpsPortLabel
+          value  := printer.print(config.httpsPort.asJson),
+          name   := FieldLabels.httpsPortLabel,
+          id     := FieldLabels.httpsPortLabel
         ),
         input(
           `type` := "hidden",
-          value := printer.print(taskSpec.taskKey.asJson),
-          name := FieldLabels.taskKeyLabel,
-          id := FieldLabels.taskKeyLabel
+          value  := printer.print(taskSpec.taskKey.asJson),
+          name   := FieldLabels.taskKeyLabel,
+          id     := FieldLabels.taskKeyLabel
         ),
         form(
-          name := FieldLabels.mturkFormLabel,
+          name   := FieldLabels.mturkFormLabel,
           method := "post",
-          id := FieldLabels.mturkFormLabel,
+          id     := FieldLabels.mturkFormLabel,
           action := config.externalSubmitURL
         )(
           // where turk puts the assignment ID
@@ -97,9 +105,9 @@ object TaskPage {
           // where our client code should put the response
           input(
             `type` := "hidden",
-            value := "", // TODO printer.print((None: Option[Response]).asJson)
-            name := FieldLabels.responseLabel,
-            id := FieldLabels.responseLabel
+            value  := "", // TODO printer.print((None: Option[Response]).asJson)
+            name   := FieldLabels.responseLabel,
+            id     := FieldLabels.responseLabel
           ),
           // and here I'll let the client code do its magic
           div(
@@ -109,7 +117,7 @@ object TaskPage {
         ),
         bodyEndTags,
         script(`type` := "text/javascript", src := s"$protocol//$serverDomain:$port/jsdeps.js"),
-        script(`type` := "text/javascript", src := s"$protocol//$serverDomain:$port/out.js"),
+        script(`type` := "text/javascript", src := s"$protocol//$serverDomain:$port/out.js")
       )
     )
   }

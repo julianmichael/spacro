@@ -17,31 +17,22 @@ trait HITDataService {
   /** Save a HIT that has been uploaded to MTurk.
     * This should happen directly after successful HIT creation.
     */
-  def saveHIT[Prompt: Encoder](
-    hit: HIT[Prompt]
-  ): Try[Unit]
+  def saveHIT[Prompt: Encoder](hit: HIT[Prompt]): Try[Unit]
 
   /** Get a stored HIT by its HIT Type ID and HIT ID, which together uniquely identify it.
     * (HIT ID may already be unique; I'm not sure.)
     */
-  def getHIT[Prompt: Decoder](
-    hitTypeId: String,
-    hitId: String
-  ): Try[HIT[Prompt]]
+  def getHIT[Prompt: Decoder](hitTypeId: String, hitId: String): Try[HIT[Prompt]]
 
   /** Save the data of an assignment that has been approved on MTurk.
     * Should happen directly after the assignment is approved.
     */
-  def saveApprovedAssignment[Response: Encoder](
-    assignment: Assignment[Response]
-  ): Try[Unit]
+  def saveApprovedAssignment[Response: Encoder](assignment: Assignment[Response]): Try[Unit]
 
   /** Save the data of an assignment that has been rejected on MTurk.
     * Should happen directly after the assignment is rejected.
     */
-  def saveRejectedAssignment[Response: Encoder](
-    assignment: Assignment[Response]
-  ): Try[Unit]
+  def saveRejectedAssignment[Response: Encoder](assignment: Assignment[Response]): Try[Unit]
 
   /** Get a saved HIT and all data relevant to that HIT. */
   def getHITInfo[Prompt: Decoder, Response: Decoder](

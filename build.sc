@@ -3,7 +3,6 @@ import mill.scalalib.scalafmt._
 import mill.util.Ctx
 import mill.define.Cross
 import coursier.maven.MavenRepository
-import ammonite.ops._
 
 val thisPublishVersion = "0.4.1-SNAPSHOT"
 val jjmVersion         = "0.2.0"

@@ -29,30 +29,34 @@ class TaskManager[Prompt, Response](
   import hitManagementHelper.config
 
   override def receive = {
-    case Start(interval, delay) => start(interval, delay)
-    case Stop                   => stop
-    case Update                 => update
-    case Expire                 => expire
-    case Delete                 => delete
+    case Start(interval, delay) =>
+      start(interval, delay)
+    case Stop =>
+      stop
+    case Update =>
+      update
+    case Expire =>
+      expire
+    case Delete =>
+      delete
   }
 
   // used to schedule updates once this has started
   private[this] var schedule: Option[Cancellable] = None
 
   // begin updating / polling the MTurk API
-  private[this] def start(interval: FiniteDuration, delay: FiniteDuration): Unit = {
+  private[this] def start(interval: FiniteDuration, delay: FiniteDuration): Unit =
     if (schedule.fold(true)(_.isCancelled)) {
       schedule = Some(
-        context.system.scheduler
+        context
+          .system
+          .scheduler
           .schedule(delay, interval, self, Update)(context.system.dispatcher, self)
       )
     }
-  }
 
   // stop regular polling
-  private[this] def stop: Unit = {
-    schedule.foreach(_.cancel())
-  }
+  private[this] def stop: Unit = schedule.foreach(_.cancel())
 
   // stop updating and expire all currently uploaded HITs
   private[this] def expire: Unit = {
@@ -69,7 +73,7 @@ class TaskManager[Prompt, Response](
 
   // review assignments, delete completed HITs, and upload new HITs
   private[this] def update: Unit = {
-    logger.info(s"Updating (${hitTypeId})...")
+    logger.info(s"Updating ($hitTypeId)...")
     hitManager ! ReviewHITs
     hitManager ! ReviewHITs
   }
@@ -80,9 +84,9 @@ object TaskManager {
   object Message {
     sealed trait Message
     case class Start(interval: FiniteDuration, delay: FiniteDuration = 2 seconds) extends Message
-    case object Stop extends Message
-    case object Update extends Message
-    case object Expire extends Message
-    case object Delete extends Message
+    case object Stop                                                              extends Message
+    case object Update                                                            extends Message
+    case object Expire                                                            extends Message
+    case object Delete                                                            extends Message
   }
 }

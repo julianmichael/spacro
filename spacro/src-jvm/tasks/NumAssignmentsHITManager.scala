@@ -52,12 +52,12 @@ class NumAssignmentsHITManager[Prompt, Response](
   var numHITsToKeepActive: Int = initNumHITsToKeepActive
 
   /** Override to add more possible incoming message types and message-processing logic. */
-  def receiveAux2: PartialFunction[Any, Unit] =
-    PartialFunction.empty[Any, Unit]
+  def receiveAux2: PartialFunction[Any, Unit] = PartialFunction.empty[Any, Unit]
 
-  override lazy val receiveAux: PartialFunction[Any, Unit] = ({
-    case SetNumHITsActive(n) => numHITsToKeepActive = n
-  }: PartialFunction[Any, Unit]) orElse receiveAux2
+  override lazy val receiveAux: PartialFunction[Any, Unit] =
+    ({ case SetNumHITsActive(n) =>
+      numHITsToKeepActive = n
+    }: PartialFunction[Any, Unit]).orElse(receiveAux2)
 
   import helper.config
   import helper.taskSpec.hitTypeId
@@ -75,9 +75,7 @@ class NumAssignmentsHITManager[Prompt, Response](
   def promptFinished(prompt: Prompt): Unit = ()
 
   // override if you want fancier behavior
-  override def addPrompt(prompt: Prompt): Unit = {
-    queuedPrompts.enqueue(prompt)
-  }
+  override def addPrompt(prompt: Prompt): Unit = queuedPrompts.enqueue(prompt)
 
   val queuedPrompts = new LazyStackQueue[Prompt](_promptSource)
 
@@ -87,9 +85,10 @@ class NumAssignmentsHITManager[Prompt, Response](
   // upload new hits to fill gaps
   def refreshHITs = {
     val numToUpload = numHITsToKeepActive - helper.numActiveHITs
-    for (_ <- 1 to numToUpload) {
+    for (_ <- 1 to numToUpload)
       queuedPrompts.filterPop(p => !isFinished(p)) match {
-        case None => () // we're finishing off, woo
+        case None =>
+          () // we're finishing off, woo
         case Some(nextPrompt) =>
           if (helper.isActive(nextPrompt)) {
             // if this prompt is already active, queue it for later
@@ -99,13 +98,15 @@ class NumAssignmentsHITManager[Prompt, Response](
             val numFinishedAssignments =
               helper.finishedHITInfos(nextPrompt).map(_.assignments.size).sum
             // following will be > 0 because isFinished was false
-            val numRemainingAssignments = numAssignmentsForPrompt(nextPrompt) - numFinishedAssignments
-            helper.createHIT(nextPrompt, numRemainingAssignments) recover {
-              case _ => queuedPrompts.enqueue(nextPrompt) // put it back at the bottom to try later
-            }
+            val numRemainingAssignments =
+              numAssignmentsForPrompt(nextPrompt) - numFinishedAssignments
+            helper
+              .createHIT(nextPrompt, numRemainingAssignments)
+              .recover { case _ =>
+                queuedPrompts.enqueue(nextPrompt) // put it back at the bottom to try later
+              }
           }
       }
-    }
   }
 
   import scala.collection.JavaConverters._
@@ -113,14 +114,17 @@ class NumAssignmentsHITManager[Prompt, Response](
   final override def reviewHITs: Unit = {
     def reviewAssignmentsForHIT(hit: HIT[Prompt]) =
       for {
-        getAssignmentsResult <- Try(
-          config.service.listAssignmentsForHIT(
-            (new ListAssignmentsForHITRequest)
-              .withHITId(hit.hitId)
-              .withMaxResults(numAssignmentsForPrompt(hit.prompt))
-              .withAssignmentStatuses(AssignmentStatus.Submitted)
-          )
-        ).toOptionLogging(logger).toList
+        getAssignmentsResult <-
+          Try(
+            config
+              .service
+              .listAssignmentsForHIT(
+                (new ListAssignmentsForHITRequest)
+                  .withHITId(hit.hitId)
+                  .withMaxResults(numAssignmentsForPrompt(hit.prompt))
+                  .withAssignmentStatuses(AssignmentStatus.Submitted)
+              )
+          ).toOptionLogging(logger).toList
         mTurkAssignment <- getAssignmentsResult.getAssignments.asScala
         assignment = helper.taskSpec.makeAssignment(hit.hitId, mTurkAssignment)
         if !helper.isInReview(assignment)
@@ -133,31 +137,35 @@ class NumAssignmentsHITManager[Prompt, Response](
     // it's rare that there are more than 100 reviewable HITs in one update,
     // and not the end of the world if we wait until the next one...
     // but... TODO fix with pagination
-    val reviewableHITs = for {
-      reviewableHITsResult <- Try(
-        config.service.listReviewableHITs(
-          (new ListReviewableHITsRequest)
-            .withHITTypeId(hitTypeId)
-            .withMaxResults(100)
-        )
-      ).toOptionLogging(logger).toList
-      mTurkHIT <- reviewableHITsResult.getHITs.asScala
-      hit <- config.hitDataService
-        .getHIT[Prompt](hitTypeId, mTurkHIT.getHITId)
-        .toOptionLogging(logger)
-        .toList
-    } yield {
-      val assignmentSubmissions = reviewAssignmentsForHIT(hit)
-      // if the HIT is "reviewable", and all its assignments are no longer "Submitted"
-      // (in which case the above list would be empty), we can delete the HIT
-      if (assignmentSubmissions.isEmpty) {
-        helper.deleteHIT(hit)
-        if (isFinished(hit.prompt)) {
-          promptFinished(hit.prompt)
+    val reviewableHITs =
+      for {
+        reviewableHITsResult <-
+          Try(
+            config
+              .service
+              .listReviewableHITs(
+                (new ListReviewableHITsRequest).withHITTypeId(hitTypeId).withMaxResults(100)
+              )
+          ).toOptionLogging(logger).toList
+        mTurkHIT <- reviewableHITsResult.getHITs.asScala
+        hit <-
+          config
+            .hitDataService
+            .getHIT[Prompt](hitTypeId, mTurkHIT.getHITId)
+            .toOptionLogging(logger)
+            .toList
+      } yield {
+        val assignmentSubmissions = reviewAssignmentsForHIT(hit)
+        // if the HIT is "reviewable", and all its assignments are no longer "Submitted"
+        // (in which case the above list would be empty), we can delete the HIT
+        if (assignmentSubmissions.isEmpty) {
+          helper.deleteHIT(hit)
+          if (isFinished(hit.prompt)) {
+            promptFinished(hit.prompt)
+          }
         }
+        hit
       }
-      hit
-    }
     val reviewableHITSet = reviewableHITs.toSet
 
     // for HITs asking for more than one assignment, we want to check those manually

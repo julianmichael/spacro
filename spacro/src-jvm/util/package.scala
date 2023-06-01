@@ -22,29 +22,38 @@ import com.amazonaws.services.mturk.model.ListQualificationTypesRequest
 /** Utility classes, methods, and extension methods for spacro. */
 package object util {
   // this is basically what we want to do with most errors
-  protected[spacro] implicit class RichTry[A](val t: Try[A]) extends AnyVal {
+  implicit protected[spacro] class RichTry[A](val t: Try[A]) extends AnyVal {
 
-    def toOptionLogging(logger: Logger): Option[A] = t match {
-      case Success(a) =>
-        Some(a)
-      case Failure(e) =>
-        val sw = new StringWriter()
-        val pw = new PrintWriter(sw, true)
-        e.printStackTrace(pw)
-        logger.error(e.getLocalizedMessage + "\n" + sw.getBuffer.toString)
-        None
-    }
+    def toOptionLogging(logger: Logger): Option[A] =
+      t match {
+        case Success(a) =>
+          Some(a)
+        case Failure(e) =>
+          val sw = new StringWriter()
+          val pw = new PrintWriter(sw, true)
+          e.printStackTrace(pw)
+          logger.error(e.getLocalizedMessage + "\n" + sw.getBuffer.toString)
+          None
+      }
   }
 
   // the two ext. methods are mainly nice for the LazyStackQueue implementation.
   // also they should seriously already exist...
 
-  protected[spacro] implicit class RichMutableStack[A](val s: mutable.Stack[A]) extends AnyVal {
-    def popOption: Option[A] = if (!s.isEmpty) Some(s.pop) else None
+  implicit protected[spacro] class RichMutableStack[A](val s: mutable.Stack[A]) extends AnyVal {
+    def popOption: Option[A] =
+      if (!s.isEmpty)
+        Some(s.pop)
+      else
+        None
   }
 
-  protected[spacro] implicit class RichMutableQueue[A](val q: mutable.Queue[A]) extends AnyVal {
-    def dequeueOption: Option[A] = if (!q.isEmpty) Some(q.dequeue) else None
+  implicit protected[spacro] class RichMutableQueue[A](val q: mutable.Queue[A]) extends AnyVal {
+    def dequeueOption: Option[A] =
+      if (!q.isEmpty)
+        Some(q.dequeue)
+      else
+        None
   }
 
   // convenience methods for mturk
@@ -54,11 +63,9 @@ package object util {
     import scala.annotation.tailrec
 
     def listAllHITs = {
-      @tailrec def getAllHITsAux(
-        hitsSoFar: Vector[MTurkHIT],
-        request: ListHITsRequest
-      ): Vector[MTurkHIT] = {
-        val nextPage = client.listHITs(request)
+      @tailrec
+      def getAllHITsAux(hitsSoFar: Vector[MTurkHIT], request: ListHITsRequest): Vector[MTurkHIT] = {
+        val nextPage             = client.listHITs(request)
         val (newHITs, nextToken) = (nextPage.getHITs, nextPage.getNextToken)
         if (newHITs == null) {
           hitsSoFar
@@ -75,11 +82,12 @@ package object util {
     }
 
     def listAllWorkersWithQualificationType(qualTypeId: String): Vector[String] = {
-      @tailrec def getAllWorkersWithQualTypeAux(
+      @tailrec
+      def getAllWorkersWithQualTypeAux(
         workersSoFar: Vector[String],
         request: ListWorkersWithQualificationTypeRequest
       ): Vector[String] = {
-        val nextPage = client.listWorkersWithQualificationType(request)
+        val nextPage                        = client.listWorkersWithQualificationType(request)
         val (nextQualifications, nextToken) = (nextPage.getQualifications, nextPage.getNextToken)
         if (nextQualifications == null) {
           workersSoFar
@@ -101,11 +109,12 @@ package object util {
     }
 
     def listAllQualificationTypes(request: ListQualificationTypesRequest) = {
-      @tailrec def listAllQualificationTypesAux(
+      @tailrec
+      def listAllQualificationTypesAux(
         qualTypesSoFar: Vector[QualificationType],
         req: ListQualificationTypesRequest
       ): Vector[QualificationType] = {
-        val nextPage = client.listQualificationTypes(request)
+        val nextPage                   = client.listQualificationTypes(request)
         val (nextQualTypes, nextToken) = (nextPage.getQualificationTypes, nextPage.getNextToken)
         if (nextQualTypes == null) {
           qualTypesSoFar

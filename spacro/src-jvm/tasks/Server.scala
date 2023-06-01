@@ -27,7 +27,7 @@ import com.typesafe.scalalogging.StrictLogging
   * Starts upon construction.
   */
 class Server(tasks: List[TaskSpecification])(implicit config: TaskConfig) extends StrictLogging {
-  implicit val system: ActorSystem = config.actorSystem
+  implicit val system: ActorSystem        = config.actorSystem
   implicit val materializer: Materializer = ActorMaterializer()
   import system.dispatcher
 
@@ -37,9 +37,8 @@ class Server(tasks: List[TaskSpecification])(implicit config: TaskConfig) extend
   httpBinding.onComplete {
     case Success(binding) ⇒
       val localAddress = binding.localAddress
-      logger.info(
-        s"Server is listening on http://${localAddress.getHostName}:${localAddress.getPort}"
-      )
+      logger
+        .info(s"Server is listening on http://${localAddress.getHostName}:${localAddress.getPort}")
     case Failure(e) ⇒
       logger.error(s"HTTP binding failed: $e")
   }
@@ -47,13 +46,15 @@ class Server(tasks: List[TaskSpecification])(implicit config: TaskConfig) extend
   val httpsServer = Try {
     // Manual HTTPS configuration
 
-    val password: Array[Char] = new java.util.Scanner(
-      getClass.getClassLoader.getResourceAsStream(s"${config.serverDomain}-keystore-password")
-    ).next.toCharArray
+    val password: Array[Char] =
+      new java.util.Scanner(
+        getClass.getClassLoader.getResourceAsStream(s"${config.serverDomain}-keystore-password")
+      ).next.toCharArray
 
     val ks: KeyStore = KeyStore.getInstance("PKCS12")
-    val keystore: InputStream =
-      getClass.getClassLoader.getResourceAsStream(s"${config.serverDomain}.p12")
+    val keystore: InputStream = getClass
+      .getClassLoader
+      .getResourceAsStream(s"${config.serverDomain}.p12")
 
     require(keystore != null, "Keystore required!")
     ks.load(keystore, password)
@@ -69,12 +70,8 @@ class Server(tasks: List[TaskSpecification])(implicit config: TaskConfig) extend
 
     val https = ConnectionContext.https(sslContext)
 
-    val httpsBinding = Http().bindAndHandle(
-      service.route,
-      config.interface,
-      config.httpsPort,
-      connectionContext = https
-    )
+    val httpsBinding = Http()
+      .bindAndHandle(service.route, config.interface, config.httpsPort, connectionContext = https)
     httpsBinding.onComplete {
       case Success(binding) ⇒
         val localAddress = binding.localAddress
@@ -87,7 +84,8 @@ class Server(tasks: List[TaskSpecification])(implicit config: TaskConfig) extend
   }
 
   httpsServer match {
-    case Success(_) => ()
+    case Success(_) =>
+      ()
     case Failure(e) =>
       logger.warn(s"HTTPS configuration failed: $e")
   }

@@ -15,17 +15,18 @@ trait TaskDispatcher {
   import scala.scalajs.js.Dynamic.global
   import io.circe.parser._
 
-  lazy val taskKey: String = {
+  lazy val taskKey: String =
     decode[String](jQuery(s"#${FieldLabels.taskKeyLabel}").attr("value").get).right.get
-  }
 
   final def main(args: Array[String]): Unit = jQuery { () =>
     // this needs to be done in order for the form submit to work
     global.turkSetAssignmentID()
     // dispatch to specific task
     taskMapping.get(taskKey) match {
-      case None       => System.err.println(s"Invalid task key: $taskKey")
-      case Some(func) => func()
+      case None =>
+        System.err.println(s"Invalid task key: $taskKey")
+      case Some(func) =>
+        func()
     }
   }
 }

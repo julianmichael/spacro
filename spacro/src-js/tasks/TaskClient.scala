@@ -17,7 +17,7 @@ import io.circe.syntax._
 abstract class TaskClient[
   Prompt: Decoder,
   Response: Encoder,
-  AjaxRequest <: Dot : Encoder : DotDecoder
+  AjaxRequest <: Dot: Encoder: DotDecoder
 ] {
   import scala.scalajs.js.Dynamic.global
   import io.circe.parser._
@@ -29,33 +29,33 @@ abstract class TaskClient[
 
   lazy val isNotAssigned = assignmentIdOpt.isEmpty
 
-  lazy val workerIdOpt: Option[String] = {
+  lazy val workerIdOpt: Option[String] =
     Option(global.turkGetParam("workerId", "UNASSIGNED").asInstanceOf[String])
       .filter(_ != "UNASSIGNED")
-  }
 
   import FieldLabels._
 
-  lazy val taskKey: String = {
-    decode[String](jQuery(s"#$taskKeyLabel").attr("value").get).right.get
-  }
+  lazy val taskKey: String = decode[String](jQuery(s"#$taskKeyLabel").attr("value").get).right.get
 
-  lazy val serverDomain: String = {
+  lazy val serverDomain: String =
     decode[String](jQuery(s"#$serverDomainLabel").attr("value").get).right.get
-  }
 
-  lazy val httpPort: Int = {
-    decode[Int](jQuery(s"#$httpPortLabel").attr("value").get).right.get
-  }
+  lazy val httpPort: Int = decode[Int](jQuery(s"#$httpPortLabel").attr("value").get).right.get
 
-  lazy val httpsPort: Int = {
-    decode[Int](jQuery(s"#$httpsPortLabel").attr("value").get).right.get
-  }
+  lazy val httpsPort: Int = decode[Int](jQuery(s"#$httpsPortLabel").attr("value").get).right.get
 
   lazy val ajaxUri = {
     val isHttps = dom.document.location.protocol == "https:"
-    val ajaxHttpProtocol = if (isHttps) "https" else "http"
-    val serverPort = if (isHttps) httpsPort else httpPort
+    val ajaxHttpProtocol =
+      if (isHttps)
+        "https"
+      else
+        "http"
+    val serverPort =
+      if (isHttps)
+        httpsPort
+      else
+        httpPort
     s"$ajaxHttpProtocol://$serverDomain:$serverPort/task/$taskKey/ajax"
   }
 
@@ -64,7 +64,9 @@ abstract class TaskClient[
 
   def makeAjaxRequest(request: AjaxRequest): Future[request.Out] = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    dom.ext.Ajax
+    dom
+      .ext
+      .Ajax
       .post(url = ajaxUri, data = printer.print(request.asJson))
       .map { response =>
         decode[request.Out](response.responseText)(
@@ -75,22 +77,25 @@ abstract class TaskClient[
 
   lazy val websocketUri: String = {
     val isHttps = dom.document.location.protocol == "https:"
-    val wsProtocol = if (isHttps) "wss" else "ws"
-    val serverPort = if (isHttps) httpsPort else httpPort
+    val wsProtocol =
+      if (isHttps)
+        "wss"
+      else
+        "ws"
+    val serverPort =
+      if (isHttps)
+        httpsPort
+      else
+        httpPort
     s"$wsProtocol://$serverDomain:$serverPort/task/$taskKey/websocket"
   }
 
-  lazy val prompt: Prompt = {
-    decode[Prompt](jQuery(s"#$promptLabel").attr("value").get).right.get
-  }
+  lazy val prompt: Prompt = decode[Prompt](jQuery(s"#$promptLabel").attr("value").get).right.get
 
-  lazy val externalSubmitURL: String = {
-    jQuery(s"form#$mturkFormLabel").attr("action").get
-  }
+  lazy val externalSubmitURL: String = jQuery(s"form#$mturkFormLabel").attr("action").get
 
-  def setResponse(response: Response): Unit = {
+  def setResponse(response: Response): Unit =
     jQuery(s"#$responseLabel").attr("value", printer.print(response.asJson))
-  }
 
   def main(): Unit
 }

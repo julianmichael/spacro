@@ -62,7 +62,7 @@ sealed trait TaskConfig {
 
 object TaskConfig {
   val sandboxEndpointUrl = "https://mturk-requester-sandbox.us-east-1.amazonaws.com"
-  val endpointRegion = Regions.US_EAST_1
+  val endpointRegion     = Regions.US_EAST_1
 }
 
 /** Complete configuration for running on production. */
@@ -76,9 +76,8 @@ case class ProductionTaskConfig(
 ) extends TaskConfig {
 
   // production endpoint configuration is chosen by default
-  override val service: AmazonMTurk = AmazonMTurkClientBuilder.standard
-    .withRegion(TaskConfig.endpointRegion)
-    .build
+  override val service: AmazonMTurk =
+    AmazonMTurkClientBuilder.standard.withRegion(TaskConfig.endpointRegion).build
 
   override val workerUrl = "https://www.mturk.com"
 
@@ -99,11 +98,13 @@ case class SandboxTaskConfig(
   override val hitDataService: HITDataService
 ) extends TaskConfig {
 
-  override val service: AmazonMTurk = AmazonMTurkClientBuilder.standard
-    .withEndpointConfiguration(
-      new EndpointConfiguration(TaskConfig.sandboxEndpointUrl, TaskConfig.endpointRegion.getName)
-    )
-    .build
+  override val service: AmazonMTurk =
+    AmazonMTurkClientBuilder
+      .standard
+      .withEndpointConfiguration(
+        new EndpointConfiguration(TaskConfig.sandboxEndpointUrl, TaskConfig.endpointRegion.getName)
+      )
+      .build
 
   override val workerUrl = "https://workersandbox.mturk.com"
 
