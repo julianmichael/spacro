@@ -3,5 +3,7 @@
 
 /out
 /spacro-sample/out
-/.bloop
-/.metals
+
+.bloop
+.metals
+.vscode
