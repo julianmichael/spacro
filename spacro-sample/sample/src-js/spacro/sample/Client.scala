@@ -25,37 +25,38 @@ object Client extends TaskClient[SamplePrompt, SampleResponse, SampleAjaxRequest
   sealed trait State
   case object Loading extends State
 
-  @Lenses case class Loaded(
-    sentence: String,
-    isGood: Boolean
-  ) extends State
+  @Lenses
+  case class Loaded(sentence: String, isGood: Boolean) extends State
 
   object State {
     def loading[A]: Prism[State, Loading.type] = GenPrism[State, Loading.type]
-    def loaded[A]: Prism[State, Loaded] = GenPrism[State, Loaded]
+    def loaded[A]: Prism[State, Loaded]        = GenPrism[State, Loaded]
   }
 
-  val isGoodLens = State.loaded composeLens Loaded.isGood
+  val isGoodLens = State.loaded.composeLens(Loaded.isGood)
 
   class FullUIBackend(scope: BackendScope[Unit, State]) {
 
     def load: Callback = Callback.future {
-      makeAjaxRequest(SampleAjaxRequest(prompt)).map {
-        case SampleAjaxResponse(sentence) =>
-          scope.modState(
-            {
-              case Loading          => Loaded(sentence, false)
-              case l @ Loaded(_, _) => System.err.println("Data already loaded."); l
-            }: PartialFunction[State, State]
-          )
+      makeAjaxRequest(SampleAjaxRequest(prompt)).map { case SampleAjaxResponse(sentence) =>
+        scope.modState({
+            case Loading =>
+              Loaded(sentence, false)
+            case l @ Loaded(_, _) =>
+              System.err.println("Data already loaded.");
+              l
+          }: PartialFunction[State, State]
+        )
       }
     }
 
-    def updateResponse: Callback = scope.state.map { st =>
-      isGoodLens.getOption(st).map(SampleResponse.apply).foreach(setResponse)
-    }
+    def updateResponse: Callback = scope
+      .state
+      .map { st =>
+        isGoodLens.getOption(st).map(SampleResponse.apply).foreach(setResponse)
+      }
 
-    def render(s: State) = {
+    def render(s: State) =
       <.div(
         instructions,
         s match {
@@ -69,7 +70,7 @@ object Client extends TaskClient[SamplePrompt, SampleResponse, SampleAjaxRequest
               <.p(
                 <.label(
                   <.input(
-                    ^.`type` := "checkbox",
+                    ^.`type`  := "checkbox",
                     ^.checked := isGood,
                     ^.onChange --> scope.modState(isGoodLens.modify(!_))
                   ),
@@ -78,33 +79,33 @@ object Client extends TaskClient[SamplePrompt, SampleResponse, SampleAjaxRequest
               ),
               <.p(
                 <.input(
-                  ^.`type` := "text",
-                  ^.name := FieldLabels.feedbackLabel,
+                  ^.`type`      := "text",
+                  ^.name        := FieldLabels.feedbackLabel,
                   ^.placeholder := "Feedback? (Optional)",
-                  ^.margin := "1px",
-                  ^.padding := "1px",
-                  ^.width := "484px"
+                  ^.margin      := "1px",
+                  ^.padding     := "1px",
+                  ^.width       := "484px"
                 )
               ),
               <.input(
-                ^.`type` := "submit",
+                ^.`type`   := "submit",
                 ^.disabled := isNotAssigned,
-                ^.id := FieldLabels.submitButtonLabel,
-                ^.value := "submit"
+                ^.id       := FieldLabels.submitButtonLabel,
+                ^.value    := "submit"
               )
             )
         }
       )
-    }
   }
 
-  val FullUI = ScalaComponent
-    .builder[Unit]("Full UI")
-    .initialState(Loading: State)
-    .renderBackend[FullUIBackend]
-    .componentDidMount(context => context.backend.load)
-    .componentDidUpdate(context => context.backend.updateResponse)
-    .build
+  val FullUI =
+    ScalaComponent
+      .builder[Unit]("Full UI")
+      .initialState(Loading: State)
+      .renderBackend[FullUIBackend]
+      .componentDidMount(context => context.backend.load)
+      .componentDidUpdate(context => context.backend.updateResponse)
+      .build
 
   def main(): Unit = jQuery { () =>
     FullUI().renderIntoDOM(dom.document.getElementById(FieldLabels.rootClientDivLabel))

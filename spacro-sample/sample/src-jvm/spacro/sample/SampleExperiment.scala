@@ -22,7 +22,8 @@ class SampleExperiment(implicit config: TaskConfig) {
   // you need to define a HIT Type for each task you will be running on Turk.
   val sampleHITType = HITType(
     title = s"Sample task: is this sentence good?",
-    description = s"""
+    description =
+      s"""
       Given a sentence, indicate whether it is good.
     """.trim,
     reward = 0.10,
@@ -56,10 +57,10 @@ class SampleExperiment(implicit config: TaskConfig) {
   // using a single object.
   // In this simple example, we only use one request and response type.
   // For more details on how DotKleisli works, ask Julian.
-  lazy val sampleAjaxService = new DotKleisli[Id, SampleAjaxRequest] {
-    def apply(request: SampleAjaxRequest) =
-      SampleAjaxResponse(sentences(request.prompt.id))
-  }
+  lazy val sampleAjaxService =
+    new DotKleisli[Id, SampleAjaxRequest] {
+      def apply(request: SampleAjaxRequest) = SampleAjaxResponse(sentences(request.prompt.id))
+    }
 
   // We need a set of sample prompts for when viewing local version of the task at
   // http://localhost:<http port>/task/<task key>/preview
@@ -69,8 +70,8 @@ class SampleExperiment(implicit config: TaskConfig) {
   val samplePrompts = prompts
 
   // the task specification is defined on the basis of the above fields
-  lazy val taskSpec =
-    TaskSpecification.NoWebsockets[SamplePrompt, SampleResponse, SampleAjaxRequest](
+  lazy val taskSpec = TaskSpecification
+    .NoWebsockets[SamplePrompt, SampleResponse, SampleAjaxRequest](
       sampleTaskKey,
       sampleHITType,
       sampleAjaxService,
@@ -87,12 +88,12 @@ class SampleExperiment(implicit config: TaskConfig) {
   // it gets a fixed number of approved assignments for every HIT.
   lazy val hitManager = actorSystem.actorOf(
     Props(
-      NumAssignmentsHITManager
-        .constAssignments[SamplePrompt, SampleResponse](
-          helper = helper,
-          numAssignmentsPerPrompt = 1,
-          initNumHITsToKeepActive = 3,
-          _promptSource = prompts.iterator)
+      NumAssignmentsHITManager.constAssignments[SamplePrompt, SampleResponse](
+        helper = helper,
+        numAssignmentsPerPrompt = 1,
+        initNumHITsToKeepActive = 3,
+        _promptSource = prompts.iterator
+      )
     )
   )
 
@@ -111,7 +112,7 @@ class SampleExperiment(implicit config: TaskConfig) {
     server
     actor ! Start(interval)
   }
-  def stop = actor ! Stop
+  def stop   = actor ! Stop
   def expire = actor ! Expire
   def delete = actor ! Delete
 

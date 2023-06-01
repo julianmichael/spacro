@@ -19,24 +19,6 @@ val scalajsJqueryVersion = "1.0.0"
 val logbackVersion = "1.2.3"
 
 
-// trait SimpleJSDeps extends Module {
-//   def jsDeps = T { Agg.empty[String] }
-//   def downloadedJSDeps = T {
-//     for(url <- jsDeps()) yield {
-//       val filename = url.substring(url.lastIndexOf("/") + 1)
-//         %("curl", "-o", filename, url)(T.ctx().dest)
-//       T.ctx().dest / filename
-//     }
-//   }
-//   def aggregatedJSDeps = T {
-//     val targetPath = T.ctx().dest / "jsdeps.js"
-//     downloadedJSDeps().foreach { path =>
-//       write.append(targetPath, read!(path))
-//       write.append(targetPath, "\n")
-//     }
-//     targetPath
-//   }
-// }
 // for some reason the $file import doesn't work anymore?
 // import $file.`scripts-build`.SimpleJSDepsBuild, SimpleJSDepsBuild.SimpleJSDeps
 trait SimpleJSDeps extends Module {
